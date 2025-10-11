@@ -1,0 +1,248 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Messages - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-envelope me-2 text-primary"></i>Messages
+                    </h2>
+                    <p class="text-muted mb-0">Communicate with teachers, parents, and administrators</p>
+                </div>
+                <div>
+                    <a href="{% url 'connecthub:compose_message' %}" class="btn btn-primary">
+                        <i class="fas fa-plus me-2"></i>Compose Message
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Messages List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-inbox me-2"></i>Message Inbox
+                        {% if unread_count > 0 %}
+                            <span class="badge bg-danger ms-2">{{ unread_count }} unread</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if messages %}
+                        <div class="table-responsive">
+                            <table class="table table-hover mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th>From/To</th>
+                                        <th>Subject</th>
+                                        <th>Message</th>
+                                        <th>Date</th>
+                                        <th>Status</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for message in messages %}
+                                    <tr class="{% if not message.is_read and message.recipient == request.user %}table-primary{% endif %}">
+                                        <td>
+                                            <div class="d-flex align-items-center">
+                                                <div class="avatar-sm bg-primary text-white rounded-circle d-flex align-items-center justify-content-center me-2">
+                                                    {% if message.sender == request.user %}
+                                                        <i class="fas fa-paper-plane"></i>
+                                                    {% else %}
+                                                        <i class="fas fa-user"></i>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    {% if message.sender == request.user %}
+                                                        <strong>To: {{ message.recipient.get_full_name|default:message.recipient.username }}</strong>
+                                                    {% else %}
+                                                        <strong>From: {{ message.sender.get_full_name|default:message.sender.username }}</strong>
+                                                    {% endif %}
+                                                    <br>
+                                                    <small class="text-muted">
+                                                        {% if message.sender == request.user %}
+                                                            {{ message.recipient.userprofile.get_role_display }}
+                                                        {% else %}
+                                                            {{ message.sender.userprofile.get_role_display }}
+                                                        {% endif %}
+                                                    </small>
+                                                </div>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <strong>{{ message.subject }}</strong>
+                                        </td>
+                                        <td>
+                                            <span class="text-muted">{{ message.content|truncatechars:50 }}</span>
+                                        </td>
+                                        <td>
+                                            <small class="text-muted">{{ message.created_at|date:"M d, Y H:i" }}</small>
+                                        </td>
+                                        <td>
+                                            {% if message.sender == request.user %}
+                                                {% if message.is_read %}
+                                                    <span class="badge bg-success">Read</span>
+                                                {% else %}
+                                                    <span class="badge bg-warning">Unread</span>
+                                                {% endif %}
+                                            {% else %}
+                                                {% if message.is_read %}
+                                                    <span class="badge bg-secondary">Read</span>
+                                                {% else %}
+                                                    <span class="badge bg-primary">New</span>
+                                                {% endif %}
+                                            {% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'connecthub:message_detail' message.id %}" class="btn btn-sm btn-outline-primary">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                {% if message.sender == request.user %}
+                                                    <a href="{% url 'connecthub:edit_message' message.id %}" class="btn btn-sm btn-outline-secondary">
+                                                        <i class="fas fa-edit"></i>
+                                                    </a>
+                                                {% endif %}
+                                                <a href="{% url 'connecthub:reply_message' message.id %}" class="btn btn-sm btn-outline-success">
+                                                    <i class="fas fa-reply"></i>
+                                                </a>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if messages.has_other_pages %}
+                        <div class="card-footer">
+                            <nav aria-label="Message pagination">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    {% if messages.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ messages.previous_page_number }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Page {{ messages.number }} of {{ messages.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if messages.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ messages.next_page_number }}">Next</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ messages.paginator.num_pages }}">Last</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No messages yet</h5>
+                            <p class="text-muted">Start a conversation by composing a new message.</p>
+                            <a href="{% url 'connecthub:compose_message' %}" class="btn btn-primary">
+                                <i class="fas fa-plus me-2"></i>Compose Message
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:compose_message' %}" class="btn btn-primary w-100">
+                                <i class="fas fa-plus me-2"></i>New Message
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:inbox' %}?filter=sent" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-paper-plane me-2"></i>Sent Messages
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:inbox' %}?filter=unread" class="btn btn-outline-warning w-100">
+                                <i class="fas fa-envelope me-2"></i>Unread Only
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:notifications' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-bell me-2"></i>Notifications
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.avatar-sm {
+    width: 32px;
+    height: 32px;
+    font-size: 14px;
+}
+
+.table th {
+    border-top: none;
+    font-weight: 600;
+    color: #495057;
+}
+
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+}
+
+.btn-group .btn:not(:last-child) {
+    margin-right: 0.25rem;
+}
+
+.table-primary {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+</style>
+{% endblock %}

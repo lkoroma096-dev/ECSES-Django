@@ -1,0 +1,231 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Compose Message - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-edit me-2 text-primary"></i>Compose Message
+                    </h2>
+                    <p class="text-muted mb-0">Send a message to teachers, parents, or administrators</p>
+                </div>
+                <div>
+                    <a href="{% url 'connecthub:inbox' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Inbox
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Compose Message Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-envelope me-2"></i>New Message
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Recipient Selection -->
+                        <div class="mb-3">
+                            <label for="recipient" class="form-label">To <span class="text-danger">*</span></label>
+                            <select class="form-select" id="recipient" name="recipient" required>
+                                <option value="">Select recipient...</option>
+                                {% for user in users %}
+                                    <option value="{{ user.id }}">
+                                        {{ user.get_full_name|default:user.username }} 
+                                        ({{ user.userprofile.get_role_display }})
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose who you want to send this message to.</div>
+                        </div>
+
+                        <!-- Subject -->
+                        <div class="mb-3">
+                            <label for="subject" class="form-label">Subject <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="subject" name="subject" 
+                                   placeholder="Enter message subject..." required>
+                        </div>
+
+                        <!-- Message Content -->
+                        <div class="mb-3">
+                            <label for="content" class="form-label">Message <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="content" name="content" rows="8" 
+                                      placeholder="Type your message here..." required></textarea>
+                            <div class="form-text">Be clear and concise in your message.</div>
+                        </div>
+
+                        <!-- Quick Templates -->
+                        <div class="mb-3">
+                            <label class="form-label">Quick Templates</label>
+                            <div class="btn-group w-100" role="group">
+                                <button type="button" class="btn btn-outline-primary btn-sm" onclick="insertTemplate('greeting')">
+                                    <i class="fas fa-hand-wave me-1"></i>Greeting
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm" onclick="insertTemplate('question')">
+                                    <i class="fas fa-question me-1"></i>Question
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm" onclick="insertTemplate('update')">
+                                    <i class="fas fa-info me-1"></i>Update
+                                </button>
+                                <button type="button" class="btn btn-outline-warning btn-sm" onclick="insertTemplate('concern')">
+                                    <i class="fas fa-exclamation me-1"></i>Concern
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'connecthub:inbox' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Send Message
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Guidelines -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-lightbulb me-2"></i>Message Guidelines
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li>Be respectful and professional</li>
+                                <li>Use clear and concise language</li>
+                                <li>Include relevant details</li>
+                                <li>Ask specific questions when needed</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <ul class="mb-0">
+                                <li>Check spelling and grammar</li>
+                                <li>Use appropriate tone for the recipient</li>
+                                <li>Include your contact information if needed</li>
+                                <li>Be patient for responses</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Character counter for message content
+    const contentTextarea = document.getElementById('content');
+    const maxLength = 1000;
+    
+    contentTextarea.addEventListener('input', function() {
+        const remaining = maxLength - this.value.length;
+        const counter = document.getElementById('char-counter') || createCharCounter();
+        counter.textContent = `${remaining} characters remaining`;
+        
+        if (remaining < 50) {
+            counter.classList.add('text-warning');
+        } else {
+            counter.classList.remove('text-warning');
+        }
+    });
+    
+    function createCharCounter() {
+        const counter = document.createElement('small');
+        counter.id = 'char-counter';
+        counter.className = 'text-muted';
+        contentTextarea.parentNode.appendChild(counter);
+        return counter;
+    }
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const recipient = document.getElementById('recipient').value;
+        const subject = document.getElementById('subject').value.trim();
+        const content = document.getElementById('content').value.trim();
+        
+        if (!recipient || !subject || !content) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+            return false;
+        }
+        
+        if (content.length < 10) {
+            e.preventDefault();
+            alert('Message content should be at least 10 characters long.');
+            return false;
+        }
+    });
+});
+
+// Template insertion functions
+function insertTemplate(type) {
+    const contentTextarea = document.getElementById('content');
+    const templates = {
+        greeting: "Hello,\n\nI hope this message finds you well.\n\n",
+        question: "Hello,\n\nI have a question regarding:\n\n",
+        update: "Hello,\n\nI wanted to provide you with an update:\n\n",
+        concern: "Hello,\n\nI wanted to share a concern:\n\n"
+    };
+    
+    if (templates[type]) {
+        contentTextarea.value += templates[type];
+        contentTextarea.focus();
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+}
+
+.btn-group .btn:not(:last-child) {
+    margin-right: 0.25rem;
+}
+</style>
+{% endblock %}

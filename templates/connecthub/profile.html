@@ -1,0 +1,288 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Profile - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-user-edit me-2 text-primary"></i>My Profile
+                    </h2>
+                    <p class="text-muted mb-0">Manage your personal information and profile settings</p>
+                </div>
+                <div>
+                    <a href="{% url 'connecthub:settings' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-cog me-2"></i>Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Profile Information Card -->
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header text-center">
+                    <h5 class="card-title mb-0">Profile Picture</h5>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-3">
+                        {% if user_profile.profile_picture %}
+                            <img src="{{ user_profile.profile_picture.url }}" alt="Profile Picture" 
+                                 class="rounded-circle" width="120" height="120" style="object-fit: cover;">
+                        {% else %}
+                            <div class="bg-primary text-white rounded-circle d-inline-flex align-items-center justify-content-center" 
+                                 style="width: 120px; height: 120px; font-size: 48px;">
+                                <i class="fas fa-user"></i>
+                            </div>
+                        {% endif %}
+                    </div>
+                    <h5 class="mb-1">{{ user.get_full_name|default:user.username }}</h5>
+                    <p class="text-muted mb-2">@{{ user.username }}</p>
+                    <span class="badge fs-6 
+                        {% if user_profile.role == 'admin' %}bg-warning
+                        {% elif user_profile.role == 'teacher' %}bg-primary
+                        {% elif user_profile.role == 'parent' %}bg-success
+                        {% elif user_profile.role == 'child' %}bg-info
+                        {% else %}bg-secondary{% endif %}">
+                        <i class="fas 
+                            {% if user_profile.role == 'admin' %}fa-crown
+                            {% elif user_profile.role == 'teacher' %}fa-chalkboard-teacher
+                            {% elif user_profile.role == 'parent' %}fa-home
+                            {% elif user_profile.role == 'child' %}fa-child
+                            {% else %}fa-user{% endif %} me-1"></i>
+                        {{ user_profile.get_role_display }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Account Information -->
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Account Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-2">
+                        <div class="col-5"><small class="text-muted">Member since:</small></div>
+                        <div class="col-7"><small class="fw-bold">{{ user.date_joined|date:"M d, Y" }}</small></div>
+                    </div>
+                    <div class="row mb-2">
+                        <div class="col-5"><small class="text-muted">Last login:</small></div>
+                        <div class="col-7">
+                            <small class="fw-bold">
+                                {% if user.last_login %}
+                                    {{ user.last_login|date:"M d, Y H:i" }}
+                                {% else %}
+                                    Never
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-5"><small class="text-muted">Status:</small></div>
+                        <div class="col-7">
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Form -->
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-edit me-2"></i>Edit Profile Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <!-- Personal Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name</label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ user.first_name }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name</label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ user.last_name }}">
+                            </div>
+                        </div>
+
+                        <!-- Contact Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ user_profile.phone }}" placeholder="(555) 123-4567">
+                            </div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="date_of_birth" class="form-label">Date of Birth</label>
+                                <input type="date" class="form-control" id="date_of_birth" name="date_of_birth" 
+                                       value="{{ user_profile.date_of_birth|date:'Y-m-d' }}">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="profile_picture" class="form-label">Profile Picture</label>
+                                <input type="file" class="form-control" id="profile_picture" name="profile_picture" 
+                                       accept="image/*">
+                                <div class="form-text">Upload a new profile picture (JPG, PNG, GIF)</div>
+                            </div>
+                        </div>
+
+                        <!-- Address -->
+                        <div class="mb-3">
+                            <label for="address" class="form-label">Address</label>
+                            <textarea class="form-control" id="address" name="address" rows="3" 
+                                      placeholder="Enter your full address...">{{ user_profile.address }}</textarea>
+                        </div>
+
+                        <!-- Role-specific Information -->
+                        {% if user_profile.role == 'teacher' %}
+                        <div class="mb-3">
+                            <label for="teacher_id" class="form-label">Teacher ID</label>
+                            <input type="text" class="form-control" id="teacher_id" name="teacher_id" 
+                                   value="{{ user_profile.teacher_id }}" placeholder="Enter your teacher ID">
+                        </div>
+                        {% endif %}
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update Profile
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Role-specific Information Cards -->
+            {% if user_profile.role == 'teacher' %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-chalkboard-teacher me-2"></i>Teacher Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-0">
+                        As a teacher, you have access to manage children's educational activities, 
+                        create assessments, and track learning progress.
+                    </p>
+                </div>
+            </div>
+            {% elif user_profile.role == 'parent' %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-home me-2"></i>Parent Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-0">
+                        As a parent, you can monitor your child's progress, communicate with teachers, 
+                        and stay updated on their educational journey.
+                    </p>
+                </div>
+            </div>
+            {% elif user_profile.role == 'child' %}
+            <div class="card mt-3">
+                <div class="card-header">
+                    <h6 class="card-title mb-0">
+                        <i class="fas fa-child me-2"></i>Child Information
+                    </h6>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted mb-0">
+                        Welcome! You can access fun learning activities, earn badges, and track your progress.
+                    </p>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.badge {
+    font-size: 0.875em;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Profile picture preview
+    const profilePictureInput = document.getElementById('profile_picture');
+    const profilePictureImg = document.querySelector('img[alt="Profile Picture"]');
+    
+    profilePictureInput.addEventListener('change', function(e) {
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (profilePictureImg) {
+                    profilePictureImg.src = e.target.result;
+                }
+            };
+            reader.readAsDataURL(file);
+        }
+    });
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const email = document.getElementById('email').value;
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        
+        if (email && !emailRegex.test(email)) {
+            e.preventDefault();
+            alert('Please enter a valid email address.');
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

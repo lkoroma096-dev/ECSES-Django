@@ -1,0 +1,361 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Settings - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-cog me-2 text-primary"></i>Settings
+                    </h2>
+                    <p class="text-muted mb-0">Manage your account preferences and security settings</p>
+                </div>
+                <div>
+                    <a href="{% url 'connecthub:profile' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-edit me-2"></i>Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Security Settings -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-shield-alt me-2"></i>Security Settings
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <!-- Change Password -->
+                    <div class="mb-4">
+                        <h6 class="text-muted mb-3">Change Password</h6>
+                        <form method="POST">
+                            {% csrf_token %}
+                            <input type="hidden" name="change_password" value="1">
+                            
+                            <div class="mb-3">
+                                <label for="current_password" class="form-label">Current Password</label>
+                                <input type="password" class="form-control" id="current_password" name="current_password" required>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password1" class="form-label">New Password</label>
+                                <input type="password" class="form-control" id="new_password1" name="new_password1" required>
+                                <div class="form-text">Minimum 8 characters recommended.</div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="new_password2" class="form-label">Confirm New Password</label>
+                                <input type="password" class="form-control" id="new_password2" name="new_password2" required>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-key me-1"></i>Change Password
+                            </button>
+                        </form>
+                    </div>
+                    
+                    <hr>
+                    
+                    <!-- Account Status -->
+                    <div class="mb-3">
+                        <h6 class="text-muted mb-3">Account Status</h6>
+                        <div class="d-flex align-items-center justify-content-between p-3 bg-light rounded">
+                            <div>
+                                <h6 class="mb-1">Account Status</h6>
+                                <p class="text-muted mb-0">
+                                    {% if user.is_active %}
+                                        Your account is currently active
+                                    {% else %}
+                                        Your account is currently inactive
+                                    {% endif %}
+                                </p>
+                            </div>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-danger">Inactive</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification Preferences -->
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>Notification Preferences
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        <input type="hidden" name="update_notifications" value="1">
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="email_notifications" checked>
+                                <label class="form-check-label" for="email_notifications">
+                                    Email Notifications
+                                </label>
+                                <div class="form-text">Receive important updates via email</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="message_notifications" checked>
+                                <label class="form-check-label" for="message_notifications">
+                                    Message Notifications
+                                </label>
+                                <div class="form-text">Get notified about new messages</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="activity_notifications" checked>
+                                <label class="form-check-label" for="activity_notifications">
+                                    Activity Notifications
+                                </label>
+                                <div class="form-text">Receive updates about activities and progress</div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <div class="form-check">
+                                <input class="form-check-input" type="checkbox" id="system_notifications" checked>
+                                <label class="form-check-label" for="system_notifications">
+                                    System Notifications
+                                </label>
+                                <div class="form-text">Important system announcements and updates</div>
+                            </div>
+                        </div>
+                        
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Preferences
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Account Management -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-exclamation-triangle me-2"></i>Account Management
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <h6 class="text-muted mb-2">Deactivate Account</h6>
+                            <p class="text-muted mb-0">
+                                If you no longer wish to use this account, you can deactivate it. 
+                                This will prevent you from logging in, but your data will be preserved.
+                            </p>
+                        </div>
+                        <div class="col-md-4 text-end">
+                            <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deactivateModal">
+                                <i class="fas fa-user-times me-1"></i>Deactivate Account
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Information Summary -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-info-circle me-2"></i>Account Information
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3">
+                            <div class="text-center p-3">
+                                <i class="fas fa-user fa-2x text-primary mb-2"></i>
+                                <h6 class="mb-1">{{ user.get_full_name|default:user.username }}</h6>
+                                <small class="text-muted">@{{ user.username }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3">
+                                <i class="fas fa-envelope fa-2x text-success mb-2"></i>
+                                <h6 class="mb-1">Email</h6>
+                                <small class="text-muted">{{ user.email }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3">
+                                <i class="fas fa-calendar fa-2x text-info mb-2"></i>
+                                <h6 class="mb-1">Member Since</h6>
+                                <small class="text-muted">{{ user.date_joined|date:"M d, Y" }}</small>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center p-3">
+                                <i class="fas fa-clock fa-2x text-warning mb-2"></i>
+                                <h6 class="mb-1">Last Login</h6>
+                                <small class="text-muted">
+                                    {% if user.last_login %}
+                                        {{ user.last_login|date:"M d, Y" }}
+                                    {% else %}
+                                        Never
+                                    {% endif %}
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Deactivate Account Modal -->
+<div class="modal fade" id="deactivateModal" tabindex="-1" aria-labelledby="deactivateModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deactivateModalLabel">
+                    <i class="fas fa-exclamation-triangle me-2"></i>Deactivate Account
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">Warning!</h6>
+                    <p class="mb-0">
+                        You are about to deactivate your account. This will prevent you from logging in, 
+                        but your data will be preserved. You can contact an administrator to reactivate your account later.
+                    </p>
+                </div>
+                
+                <p class="mb-3">
+                    Are you sure you want to deactivate your account? This action will:
+                </p>
+                
+                <ul class="mb-3">
+                    <li>Prevent you from logging in</li>
+                    <li>Preserve all your data</li>
+                    <li>Require administrator assistance to reactivate</li>
+                </ul>
+                
+                <form method="POST" id="deactivateForm">
+                    {% csrf_token %}
+                    <input type="hidden" name="deactivate_account" value="1">
+                    <div class="mb-3">
+                        <label for="confirmDeactivate" class="form-label">
+                            Type <strong>DEACTIVATE</strong> to confirm:
+                        </label>
+                        <input type="text" class="form-control" id="confirmDeactivate" name="confirmDeactivate" 
+                               placeholder="Type DEACTIVATE to confirm" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="submit" form="deactivateForm" class="btn btn-danger" id="deactivateBtn" disabled>
+                    <i class="fas fa-user-times me-1"></i>Deactivate Account
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.modal-header.bg-danger {
+    background-color: #dc3545 !important;
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Password confirmation validation
+    const newPassword1 = document.getElementById('new_password1');
+    const newPassword2 = document.getElementById('new_password2');
+    
+    function validatePassword() {
+        if (newPassword1.value !== newPassword2.value) {
+            newPassword2.setCustomValidity('Passwords do not match');
+        } else {
+            newPassword2.setCustomValidity('');
+        }
+    }
+    
+    newPassword1.addEventListener('change', validatePassword);
+    newPassword2.addEventListener('keyup', validatePassword);
+    
+    // Deactivate account confirmation
+    const confirmDeactivate = document.getElementById('confirmDeactivate');
+    const deactivateBtn = document.getElementById('deactivateBtn');
+    
+    confirmDeactivate.addEventListener('input', function() {
+        if (this.value === 'DEACTIVATE') {
+            deactivateBtn.disabled = false;
+        } else {
+            deactivateBtn.disabled = true;
+        }
+    });
+    
+    // Form validation for deactivate
+    const deactivateForm = document.getElementById('deactivateForm');
+    deactivateForm.addEventListener('submit', function(e) {
+        if (confirmDeactivate.value !== 'DEACTIVATE') {
+            e.preventDefault();
+            alert('Please type DEACTIVATE to confirm.');
+            return false;
+        }
+        
+        const confirmed = confirm('Are you absolutely sure you want to deactivate your account?');
+        if (!confirmed) {
+            e.preventDefault();
+            return false;
+        }
+    });
+});
+</script>
+{% endblock %}

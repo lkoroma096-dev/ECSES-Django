@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Analytics Dashboard - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chart-pie me-2"></i>LearnLytics Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Analytics Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_activities }}</h4>
+                        <p class="card-text">Total Activities</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ completed_activities }}</h4>
+                        <p class="card-text">Completed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_badges_earned }}</h4>
+                        <p class="card-text">Badges Earned</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-medal fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ average_score|floatformat:1 }}</h4>
+                        <p class="card-text">Avg Score</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-star fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row mb-4">
+    <!-- Activity Completion Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>Activity Completion by Type
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="completionChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Trends Chart -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Performance Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="trendsChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Badge Distribution and Top Performers -->
+<div class="row mb-4">
+    <!-- Badge Distribution -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-medal me-2"></i>Badge Distribution
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="badgeChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Top Performers -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>Top Performers
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for performer in top_performers %}
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <h6 class="mb-1">{{ performer.child.first_name }} {{ performer.child.last_name }}</h6>
+                            <small class="text-muted">{{ performer.total_points }} points</small>
+                        </div>
+                        <div class="text-end">
+                            <span class="badge bg-primary rounded-pill">{{ performer.badges_count }} badges</span>
+                        </div>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-trophy fa-2x mb-2"></i>
+                        <p>No performance data available</p>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Analytics Table -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-table me-2"></i>Activity Analytics
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Activity Type</th>
+                                <th>Total Activities</th>
+                                <th>Completed</th>
+                                <th>Completion Rate</th>
+                                <th>Avg Score</th>
+                                <th>Avg Duration</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for stat in activity_stats %}
+                            <tr>
+                                <td>
+                                    <i class="fas fa-{% if stat.activity_type == 'reading' %}book{% elif stat.activity_type == 'math' %}calculator{% elif stat.activity_type == 'art' %}palette{% elif stat.activity_type == 'physical' %}running{% elif stat.activity_type == 'music' %}music{% elif stat.activity_type == 'science' %}flask{% else %}puzzle-piece{% endif %} me-2"></i>
+                                    {{ stat.get_activity_type_display }}
+                                </td>
+                                <td>{{ stat.total_activities }}</td>
+                                <td>{{ stat.completed_activities }}</td>
+                                <td>
+                                    <div class="progress" style="height: 20px;">
+                                        <div class="progress-bar bg-success" style="width: {{ stat.completion_rate }}%">
+                                            {{ stat.completion_rate }}%
+                                        </div>
+                                    </div>
+                                </td>
+                                <td>{{ stat.average_score|floatformat:1 }}/5.0</td>
+                                <td>{{ stat.average_duration|floatformat:0 }} min</td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="6" class="text-center text-muted">
+                                    <i class="fas fa-chart-bar fa-2x mb-2"></i>
+                                    <p>No analytics data available</p>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'learnlytics:activity_new' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-plus me-2"></i>Create Activity
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'learnlytics:assign_activity' %}" class="btn btn-success w-100">
+                            <i class="fas fa-user-plus me-2"></i>Assign Activity
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'learnlytics:reports' %}" class="btn btn-info w-100">
+                            <i class="fas fa-file-alt me-2"></i>Generate Report
+                        </a>
+                    </div>
+                    <div class="col-md-3 mb-2">
+                        <a href="{% url 'learnlytics:badges' %}" class="btn btn-warning w-100">
+                            <i class="fas fa-medal me-2"></i>Manage Badges
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Activity Completion Chart
+const completionCtx = document.getElementById('completionChart').getContext('2d');
+const completionChart = new Chart(completionCtx, {
+    type: 'doughnut',
+    data: {
+        labels: {{ completion_labels|safe }},
+        datasets: [{
+            data: {{ completion_data|safe }},
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF',
+                '#FF9F40'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// Performance Trends Chart
+const trendsCtx = document.getElementById('trendsChart').getContext('2d');
+const trendsChart = new Chart(trendsCtx, {
+    type: 'line',
+    data: {
+        labels: {{ trends_labels|safe }},
+        datasets: [{
+            label: 'Average Score',
+            data: {{ trends_data|safe }},
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 5
+            }
+        }
+    }
+});
+
+// Badge Distribution Chart
+const badgeCtx = document.getElementById('badgeChart').getContext('2d');
+const badgeChart = new Chart(badgeCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ badge_labels|safe }},
+        datasets: [{
+            label: 'Badges Earned',
+            data: {{ badge_data|safe }},
+            backgroundColor: 'rgba(255, 206, 86, 0.8)',
+            borderColor: 'rgba(255, 206, 86, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+

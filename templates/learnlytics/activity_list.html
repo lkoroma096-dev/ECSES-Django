@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Activities - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-tasks me-2"></i>Learning Activities
+            </h1>
+            {% if user.userprofile.role == 'teacher' or user.is_superuser %}
+            <a href="{% url 'learnlytics:activity_new' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create Activity
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Search and Filter -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-4">
+                        <input type="text" class="form-control" name="search" placeholder="Search activities..." value="{{ request.GET.search }}">
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="activity_type">
+                            <option value="">All Types</option>
+                            <option value="reading" {% if request.GET.activity_type == 'reading' %}selected{% endif %}>Reading</option>
+                            <option value="writing" {% if request.GET.activity_type == 'writing' %}selected{% endif %}>Writing</option>
+                            <option value="math" {% if request.GET.activity_type == 'math' %}selected{% endif %}>Math</option>
+                            <option value="science" {% if request.GET.activity_type == 'science' %}selected{% endif %}>Science</option>
+                            <option value="art" {% if request.GET.activity_type == 'art' %}selected{% endif %}>Art</option>
+                            <option value="music" {% if request.GET.activity_type == 'music' %}selected{% endif %}>Music</option>
+                            <option value="physical" {% if request.GET.activity_type == 'physical' %}selected{% endif %}>Physical</option>
+                            <option value="social" {% if request.GET.activity_type == 'social' %}selected{% endif %}>Social</option>
+                            <option value="cognitive" {% if request.GET.activity_type == 'cognitive' %}selected{% endif %}>Cognitive</option>
+                            <option value="language" {% if request.GET.activity_type == 'language' %}selected{% endif %}>Language</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="difficulty">
+                            <option value="">All Levels</option>
+                            <option value="1" {% if request.GET.difficulty == '1' %}selected{% endif %}>Beginner</option>
+                            <option value="2" {% if request.GET.difficulty == '2' %}selected{% endif %}>Easy</option>
+                            <option value="3" {% if request.GET.difficulty == '3' %}selected{% endif %}>Intermediate</option>
+                            <option value="4" {% if request.GET.difficulty == '4' %}selected{% endif %}>Advanced</option>
+                            <option value="5" {% if request.GET.difficulty == '5' %}selected{% endif %}>Expert</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <select class="form-select" name="age_range">
+                            <option value="">All Ages</option>
+                            <option value="0-12" {% if request.GET.age_range == '0-12' %}selected{% endif %}>0-12 months</option>
+                            <option value="13-24" {% if request.GET.age_range == '13-24' %}selected{% endif %}>13-24 months</option>
+                            <option value="25-36" {% if request.GET.age_range == '25-36' %}selected{% endif %}>25-36 months</option>
+                            <option value="37+" {% if request.GET.age_range == '37+' %}selected{% endif %}>37+ months</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-search me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activities Grid -->
+<div class="row">
+    {% for activity in activities %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">
+                    <i class="fas fa-{% if activity.activity_type == 'reading' %}book{% elif activity.activity_type == 'math' %}calculator{% elif activity.activity_type == 'art' %}palette{% elif activity.activity_type == 'physical' %}running{% elif activity.activity_type == 'music' %}music{% elif activity.activity_type == 'science' %}flask{% else %}puzzle-piece{% endif %} me-2"></i>
+                    {{ activity.title }}
+                </h6>
+                <span class="badge bg-{% if activity.difficulty_level == 1 %}success{% elif activity.difficulty_level == 2 %}info{% elif activity.difficulty_level == 3 %}warning{% elif activity.difficulty_level == 4 %}danger{% else %}dark{% endif %}">
+                    {{ activity.get_difficulty_level_display }}
+                </span>
+            </div>
+            <div class="card-body">
+                <p class="card-text">{{ activity.description|truncatechars:100 }}</p>
+                
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h6>Type</h6>
+                        <span class="badge bg-primary">{{ activity.get_activity_type_display }}</span>
+                    </div>
+                    <div class="col-6">
+                        <h6>Duration</h6>
+                        <small class="text-muted">{{ activity.estimated_duration }} min</small>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Age Range</h6>
+                    <small class="text-muted">{{ activity.age_range_min }}-{{ activity.age_range_max }} months</small>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Learning Objectives</h6>
+                    <small class="text-muted">{{ activity.learning_objectives|truncatechars:80 }}</small>
+                </div>
+                
+                {% if activity.materials_needed %}
+                <div class="mb-3">
+                    <h6>Materials Needed</h6>
+                    <small class="text-muted">{{ activity.materials_needed|truncatechars:60 }}</small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer">
+                <div class="d-grid gap-2">
+                    <a href="{% url 'learnlytics:activity_detail' activity.id %}" class="btn btn-primary btn-sm">
+                        <i class="fas fa-eye me-1"></i>View Details
+                    </a>
+                    {% if user.userprofile.role == 'teacher' or user.is_superuser %}
+                    <a href="{% url 'learnlytics:assign_activity' activity.id %}" class="btn btn-outline-success btn-sm">
+                        <i class="fas fa-user-plus me-1"></i>Assign
+                    </a>
+                    {% elif user.userprofile.role == 'child' %}
+                    <a href="{% url 'learnlytics:start_activity' activity.id %}" class="btn btn-success btn-sm">
+                        <i class="fas fa-play me-1"></i>Start Activity
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-tasks fa-3x mb-3"></i>
+            <h4>No activities found</h4>
+            <p>{% if request.GET.search %}Try adjusting your search criteria.{% else %}No activities have been created yet.{% endif %}</p>
+            {% if user.userprofile.role == 'teacher' or user.is_superuser %}
+            <a href="{% url 'learnlytics:activity_new' %}" class="btn btn-primary">
+                <i class="fas fa-plus me-2"></i>Create First Activity
+            </a>
+            {% endif %}
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+<!-- Pagination -->
+{% if activities.has_other_pages %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="Activities pagination">
+            <ul class="pagination justify-content-center">
+                {% if activities.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ activities.previous_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.age_range %}&age_range={{ request.GET.age_range }}{% endif %}">Previous</a>
+                </li>
+                {% endif %}
+                
+                {% for num in activities.paginator.page_range %}
+                {% if activities.number == num %}
+                <li class="page-item active">
+                    <span class="page-link">{{ num }}</span>
+                </li>
+                {% elif num > activities.number|add:'-3' and num < activities.number|add:'3' %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ num }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.age_range %}&age_range={{ request.GET.age_range }}{% endif %}">{{ num }}</a>
+                </li>
+                {% endif %}
+                {% endfor %}
+                
+                {% if activities.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ activities.next_page_number }}{% if request.GET.search %}&search={{ request.GET.search }}{% endif %}{% if request.GET.activity_type %}&activity_type={{ request.GET.activity_type }}{% endif %}{% if request.GET.difficulty %}&difficulty={{ request.GET.difficulty }}{% endif %}{% if request.GET.age_range %}&age_range={{ request.GET.age_range }}{% endif %}">Next</a>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

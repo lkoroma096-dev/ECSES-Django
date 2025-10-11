@@ -1,0 +1,345 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}My Dashboard - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-star me-2"></i>Welcome, {{ user.get_full_name|default:user.username }}!
+        </h1>
+    </div>
+</div>
+
+<!-- Child Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ my_activities_count }}</h4>
+                        <p class="card-text">My Activities</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-gamepad fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ completed_activities }}</h4>
+                        <p class="card-text">Completed</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-check-circle fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ my_badges_count }}</h4>
+                        <p class="card-text">Badges Earned</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-medal fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ my_points }}</h4>
+                        <p class="card-text">Points</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-star fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Activities -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-tasks me-2"></i>My Activities
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if my_activities %}
+                <div class="row">
+                    {% for assignment in my_activities %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-{% if assignment.status == 'completed' %}success{% elif assignment.status == 'in_progress' %}warning{% else %}primary{% endif %}">
+                            <div class="card-header bg-{% if assignment.status == 'completed' %}success{% elif assignment.status == 'in_progress' %}warning{% else %}primary{% endif %} text-white">
+                                <h6 class="card-title mb-0">
+                                    <i class="fas fa-{% if assignment.activity.activity_type == 'reading' %}book{% elif assignment.activity.activity_type == 'math' %}calculator{% elif assignment.activity.activity_type == 'art' %}palette{% elif assignment.activity.activity_type == 'physical' %}running{% else %}puzzle-piece{% endif %} me-2"></i>
+                                    {{ assignment.activity.title }}
+                                </h6>
+                            </div>
+                            <div class="card-body">
+                                <p class="card-text">
+                                    <small>{{ assignment.activity.description|truncatechars:80 }}</small>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Status:</strong> 
+                                    <span class="badge bg-{% if assignment.status == 'completed' %}success{% elif assignment.status == 'in_progress' %}warning{% else %}primary{% endif %}">
+                                        {{ assignment.get_status_display }}
+                                    </span>
+                                </p>
+                                <p class="card-text">
+                                    <strong>Difficulty:</strong> 
+                                    <span class="badge bg-secondary">
+                                        {{ assignment.activity.get_difficulty_level_display }}
+                                    </span>
+                                </p>
+                                {% if assignment.due_date %}
+                                <p class="card-text">
+                                    <strong>Due:</strong> 
+                                    <small class="text-muted">{{ assignment.due_date|date:"M d, Y" }}</small>
+                                </p>
+                                {% endif %}
+                                <div class="d-grid gap-2">
+                                    {% if assignment.status == 'assigned' %}
+                                    <a href="{% url 'learnlytics:start_activity' assignment.id %}" class="btn btn-success btn-sm">
+                                        <i class="fas fa-play me-1"></i>Start Activity
+                                    </a>
+                                    {% elif assignment.status == 'in_progress' %}
+                                    <a href="{% url 'learnlytics:continue_activity' assignment.id %}" class="btn btn-warning btn-sm">
+                                        <i class="fas fa-play me-1"></i>Continue
+                                    </a>
+                                    {% elif assignment.status == 'completed' %}
+                                    <a href="{% url 'learnlytics:activity_detail' assignment.activity.id %}" class="btn btn-outline-success btn-sm">
+                                        <i class="fas fa-eye me-1"></i>View Details
+                                    </a>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-gamepad fa-3x mb-3"></i>
+                    <p>No activities assigned yet</p>
+                    <p class="small">Your teacher will assign activities for you soon!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Badges and Progress -->
+<div class="row">
+    <!-- My Badges -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-medal me-2"></i>My Badges
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if my_badges %}
+                <div class="row">
+                    {% for child_badge in my_badges %}
+                    <div class="col-6 col-md-4 mb-3 text-center">
+                        <div class="badge-display">
+                            <div class="badge-icon mb-2" style="color: {{ child_badge.badge.color }}; font-size: 2rem;">
+                                <i class="fas fa-{{ child_badge.badge.icon }}"></i>
+                            </div>
+                            <h6 class="badge-name">{{ child_badge.badge.name }}</h6>
+                            <small class="text-muted">{{ child_badge.earned_date|date:"M d" }}</small>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-medal fa-3x mb-3"></i>
+                    <p>No badges earned yet</p>
+                    <p class="small">Complete activities to earn badges!</p>
+                </div>
+                {% endif %}
+                <hr>
+                <div class="d-grid">
+                    <a href="{% url 'learnlytics:badges' %}" class="btn btn-warning">
+                        <i class="fas fa-medal me-2"></i>View All Badges
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Progress Bar -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>My Progress
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <h6>Overall Progress</h6>
+                    <div class="progress" style="height: 20px;">
+                        <div class="progress-bar bg-success" style="width: {{ overall_progress }}%">
+                            {{ overall_progress }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Activity Completion</h6>
+                    <div class="progress" style="height: 15px;">
+                        <div class="progress-bar bg-info" style="width: {{ activity_completion }}%">
+                            {{ activity_completion }}%
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mb-3">
+                    <h6>Learning Streak</h6>
+                    <div class="d-flex align-items-center">
+                        <i class="fas fa-fire text-warning me-2"></i>
+                        <span class="h5 mb-0">{{ learning_streak }} days</span>
+                    </div>
+                </div>
+                
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h6>This Week</h6>
+                        <h4 class="text-primary">{{ activities_this_week }}</h4>
+                    </div>
+                    <div class="col-4">
+                        <h6>This Month</h6>
+                        <h4 class="text-success">{{ activities_this_month }}</h4>
+                    </div>
+                    <div class="col-4">
+                        <h6>Total Points</h6>
+                        <h4 class="text-warning">{{ my_points }}</h4>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Teacher Feedback -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-comments me-2"></i>Teacher Feedback
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if teacher_feedback %}
+                <div class="list-group list-group-flush">
+                    {% for feedback in teacher_feedback %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ feedback.activity.title }}</h6>
+                            <small class="text-muted">{{ feedback.created_at|timesince }} ago</small>
+                        </div>
+                        <p class="mb-1">{{ feedback.notes }}</p>
+                        <small class="text-muted">From: {{ feedback.teacher.get_full_name|default:feedback.teacher.username }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-comments fa-3x mb-3"></i>
+                    <p>No feedback yet</p>
+                    <p class="small">Complete activities to receive feedback from your teacher!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Fun Learning Tips -->
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h5 class="card-title">
+                    <i class="fas fa-lightbulb me-2"></i>Learning Tips
+                </h5>
+                <p class="card-text">
+                    <i class="fas fa-quote-left me-2"></i>
+                    "Every activity you complete helps you learn and grow! Don't forget to take breaks and have fun while learning."
+                    <i class="fas fa-quote-right ms-2"></i>
+                </p>
+                <div class="row text-center mt-3">
+                    <div class="col-md-4">
+                        <i class="fas fa-star text-warning fa-2x mb-2"></i>
+                        <h6>Earn Stars</h6>
+                        <small class="text-muted">Complete activities to earn stars and badges</small>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-trophy text-success fa-2x mb-2"></i>
+                        <h6>Win Prizes</h6>
+                        <small class="text-muted">Collect enough points to unlock special rewards</small>
+                    </div>
+                    <div class="col-md-4">
+                        <i class="fas fa-heart text-danger fa-2x mb-2"></i>
+                        <h6>Have Fun</h6>
+                        <small class="text-muted">Learning is most fun when you enjoy what you're doing</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.badge-display {
+    padding: 10px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    transition: transform 0.2s;
+}
+
+.badge-display:hover {
+    transform: scale(1.05);
+}
+
+.badge-icon {
+    display: block;
+    margin: 0 auto;
+}
+
+.badge-name {
+    font-size: 0.9rem;
+    margin: 5px 0;
+}
+</style>
+{% endblock %}
+

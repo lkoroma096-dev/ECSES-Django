@@ -1,0 +1,273 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Send Notification - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-bullhorn me-2 text-primary"></i>Send System Notification
+                    </h2>
+                    <p class="text-muted mb-0">Send notifications to users or all system users</p>
+                </div>
+                <div>
+                    <a href="{% url 'connecthub:notifications' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to Notifications
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Send Notification Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bullhorn me-2"></i>Create Notification
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Notification Type -->
+                        <div class="mb-3">
+                            <label for="notification_type" class="form-label">Notification Type <span class="text-danger">*</span></label>
+                            <select class="form-select" id="notification_type" name="notification_type" required>
+                                <option value="info">Information</option>
+                                <option value="success">Success</option>
+                                <option value="warning">Warning</option>
+                                <option value="error">Error</option>
+                            </select>
+                            <div class="form-text">Choose the type of notification to send.</div>
+                        </div>
+
+                        <!-- Title -->
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Title <span class="text-danger">*</span></label>
+                            <input type="text" class="form-control" id="title" name="title" 
+                                   placeholder="Enter notification title..." required>
+                        </div>
+
+                        <!-- Message Content -->
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Message <span class="text-danger">*</span></label>
+                            <textarea class="form-control" id="message" name="message" rows="6" 
+                                      placeholder="Enter notification message..." required></textarea>
+                            <div class="form-text">Be clear and informative in your message.</div>
+                        </div>
+
+                        <!-- Target Users -->
+                        <div class="mb-3">
+                            <label class="form-label">Target Users</label>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" id="send_to_all" onchange="toggleUserSelection()">
+                                <label class="form-check-label" for="send_to_all">
+                                    <strong>Send to all users</strong>
+                                </label>
+                            </div>
+                            
+                            <div id="user-selection" style="display: none;">
+                                <label class="form-label">Select specific users:</label>
+                                <div class="border rounded p-3" style="max-height: 200px; overflow-y: auto;">
+                                    {% for user in users %}
+                                    <div class="form-check">
+                                        <input class="form-check-input" type="checkbox" name="target_users" 
+                                               value="{{ user.id }}" id="user_{{ user.id }}">
+                                        <label class="form-check-label" for="user_{{ user.id }}">
+                                            {{ user.get_full_name|default:user.username }} 
+                                            <span class="badge bg-secondary ms-1">{{ user.userprofile.get_role_display }}</span>
+                                        </label>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Preview -->
+                        <div class="mb-3">
+                            <label class="form-label">Preview</label>
+                            <div class="border rounded p-3 bg-light">
+                                <div class="d-flex align-items-center mb-2">
+                                    <i class="fas fa-info-circle fa-lg text-info me-2" id="preview-icon"></i>
+                                    <h6 class="mb-0" id="preview-title">Notification Title</h6>
+                                </div>
+                                <p class="mb-0" id="preview-message">Notification message will appear here...</p>
+                            </div>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'connecthub:notifications' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-paper-plane me-1"></i>Send Notification
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Guidelines -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card bg-light">
+                <div class="card-body">
+                    <h6 class="card-title">
+                        <i class="fas fa-lightbulb me-2"></i>Notification Guidelines
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h6 class="text-primary">Best Practices:</h6>
+                            <ul class="mb-0">
+                                <li>Use clear and concise language</li>
+                                <li>Choose appropriate notification type</li>
+                                <li>Include relevant details</li>
+                                <li>Be respectful and professional</li>
+                            </ul>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-warning">Important Notes:</h6>
+                            <ul class="mb-0">
+                                <li>Notifications are sent immediately</li>
+                                <li>Users will see them in their dashboard</li>
+                                <li>Use sparingly to avoid notification fatigue</li>
+                                <li>Consider timing for important announcements</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Update preview when form fields change
+    const titleInput = document.getElementById('title');
+    const messageInput = document.getElementById('message');
+    const typeSelect = document.getElementById('notification_type');
+    
+    function updatePreview() {
+        const title = titleInput.value || 'Notification Title';
+        const message = messageInput.value || 'Notification message will appear here...';
+        const type = typeSelect.value;
+        
+        document.getElementById('preview-title').textContent = title;
+        document.getElementById('preview-message').textContent = message;
+        
+        // Update icon based on type
+        const icon = document.getElementById('preview-icon');
+        icon.className = 'fas fa-lg me-2';
+        
+        switch(type) {
+            case 'info':
+                icon.classList.add('fa-info-circle', 'text-info');
+                break;
+            case 'success':
+                icon.classList.add('fa-check-circle', 'text-success');
+                break;
+            case 'warning':
+                icon.classList.add('fa-exclamation-triangle', 'text-warning');
+                break;
+            case 'error':
+                icon.classList.add('fa-exclamation-circle', 'text-danger');
+                break;
+        }
+    }
+    
+    titleInput.addEventListener('input', updatePreview);
+    messageInput.addEventListener('input', updatePreview);
+    typeSelect.addEventListener('change', updatePreview);
+    
+    // Form validation
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const title = titleInput.value.trim();
+        const message = messageInput.value.trim();
+        const sendToAll = document.getElementById('send_to_all').checked;
+        const selectedUsers = document.querySelectorAll('input[name="target_users"]:checked');
+        
+        if (!title || !message) {
+            e.preventDefault();
+            alert('Please fill in all required fields.');
+            return false;
+        }
+        
+        if (!sendToAll && selectedUsers.length === 0) {
+            e.preventDefault();
+            alert('Please select at least one user or choose to send to all users.');
+            return false;
+        }
+        
+        if (message.length < 10) {
+            e.preventDefault();
+            alert('Message content should be at least 10 characters long.');
+            return false;
+        }
+        
+        // Confirmation for sending to all users
+        if (sendToAll) {
+            const confirmed = confirm('Are you sure you want to send this notification to ALL users?');
+            if (!confirmed) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+});
+
+function toggleUserSelection() {
+    const sendToAll = document.getElementById('send_to_all');
+    const userSelection = document.getElementById('user-selection');
+    const userCheckboxes = document.querySelectorAll('input[name="target_users"]');
+    
+    if (sendToAll.checked) {
+        userSelection.style.display = 'none';
+        userCheckboxes.forEach(checkbox => checkbox.checked = false);
+    } else {
+        userSelection.style.display = 'block';
+    }
+}
+</script>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.bg-light {
+    background-color: #f8f9fa !important;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+</style>
+{% endblock %}

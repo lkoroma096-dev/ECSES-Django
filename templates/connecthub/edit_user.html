@@ -1,0 +1,199 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Edit User - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-user-edit me-2 text-primary"></i>Edit User
+                    </h2>
+                    <p class="text-muted mb-0">Update user information and settings</p>
+                </div>
+                <div>
+                    <a href="{% url 'connecthub:user_management' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-arrow-left me-2"></i>Back to User Management
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit User Form -->
+    <div class="row justify-content-center">
+        <div class="col-md-8 col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-user-edit me-2"></i>Edit {{ user_obj.get_full_name|default:user_obj.username }}
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {% csrf_token %}
+                        
+                        <!-- Personal Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="first_name" class="form-label">First Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="first_name" name="first_name" 
+                                       value="{{ user_obj.first_name }}" required>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="last_name" class="form-label">Last Name <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="last_name" name="last_name" 
+                                       value="{{ user_obj.last_name }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Account Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="username" class="form-label">Username <span class="text-danger">*</span></label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ user_obj.username }}" required>
+                                <div class="form-text">Must be unique and contain only letters, numbers, and underscores.</div>
+                            </div>
+                            <div class="col-md-6">
+                                <label for="email" class="form-label">Email Address <span class="text-danger">*</span></label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user_obj.email }}" required>
+                            </div>
+                        </div>
+
+                        <!-- Role Selection -->
+                        <div class="mb-3">
+                            <label for="role" class="form-label">Role <span class="text-danger">*</span></label>
+                            <select class="form-select" id="role" name="role" required>
+                                {% for role_value, role_display in role_choices %}
+                                    <option value="{{ role_value }}" {% if user_profile.role == role_value %}selected{% endif %}>
+                                        {{ role_display }}
+                                    </option>
+                                {% endfor %}
+                            </select>
+                            <div class="form-text">Choose the appropriate role for this user.</div>
+                        </div>
+
+                        <!-- Additional Information -->
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="phone" class="form-label">Phone Number</label>
+                                <input type="tel" class="form-control" id="phone" name="phone" 
+                                       value="{{ user_profile.phone }}" placeholder="(555) 123-4567">
+                            </div>
+                            <div class="col-md-6">
+                                <label for="address" class="form-label">Address</label>
+                                <textarea class="form-control" id="address" name="address" rows="2" 
+                                          placeholder="Enter full address...">{{ user_profile.address }}</textarea>
+                            </div>
+                        </div>
+
+                        <!-- User Status Information -->
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-3">Account Information:</h6>
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <div class="card border-info">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-calendar-alt text-info me-2"></i>
+                                                <div>
+                                                    <small class="text-muted">Date Joined</small>
+                                                    <p class="mb-0 fw-bold">{{ user_obj.date_joined|date:"M d, Y" }}</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card border-success">
+                                        <div class="card-body p-3">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fas fa-clock text-success me-2"></i>
+                                                <div>
+                                                    <small class="text-muted">Last Login</small>
+                                                    <p class="mb-0 fw-bold">
+                                                        {% if user_obj.last_login %}
+                                                            {{ user_obj.last_login|date:"M d, Y H:i" }}
+                                                        {% else %}
+                                                            Never
+                                                        {% endif %}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Current Role Badge -->
+                        <div class="mb-4">
+                            <h6 class="text-muted mb-2">Current Role:</h6>
+                            <span class="badge fs-6 
+                                {% if user_profile.role == 'admin' %}bg-warning
+                                {% elif user_profile.role == 'teacher' %}bg-primary
+                                {% elif user_profile.role == 'parent' %}bg-success
+                                {% elif user_profile.role == 'child' %}bg-info
+                                {% else %}bg-secondary{% endif %}">
+                                <i class="fas 
+                                    {% if user_profile.role == 'admin' %}fa-crown
+                                    {% elif user_profile.role == 'teacher' %}fa-chalkboard-teacher
+                                    {% elif user_profile.role == 'parent' %}fa-home
+                                    {% elif user_profile.role == 'child' %}fa-child
+                                    {% else %}fa-user{% endif %} me-1"></i>
+                                {{ user_profile.get_role_display }}
+                            </span>
+                        </div>
+
+                        <!-- Form Actions -->
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{% url 'connecthub:user_management' %}" class="btn btn-outline-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i>Cancel
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-save me-1"></i>Update User
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Username validation
+    const username = document.getElementById('username');
+    username.addEventListener('input', function() {
+        const value = this.value;
+        const regex = /^[a-zA-Z0-9_]+$/;
+        if (value && !regex.test(value)) {
+            this.setCustomValidity('Username can only contain letters, numbers, and underscores');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+    
+    // Email validation
+    const email = document.getElementById('email');
+    email.addEventListener('input', function() {
+        const value = this.value;
+        const regex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        if (value && !regex.test(value)) {
+            this.setCustomValidity('Please enter a valid email address');
+        } else {
+            this.setCustomValidity('');
+        }
+    });
+});
+</script>
+{% endblock %}

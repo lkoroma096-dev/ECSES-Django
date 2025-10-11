@@ -1,0 +1,179 @@
+
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}ECSES - Early Support in Childhood Educational System{% endblock %}</title>
+    
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Font Awesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Custom CSS -->
+    <link href="{% static 'css/styles.css' %}" rel="stylesheet">
+    
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+        <div class="container-fluid">
+            <a class="navbar-brand" href="{% url 'home' %}">
+                <i class="fas fa-graduation-cap me-2"></i>ECSES
+            </a>
+            
+            {% if user.is_authenticated %}
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            
+            <div class="collapse navbar-collapse" id="navbarNav">6 
+                <ul class="navbar-nav me-auto">
+                    <!-- Role-based navigation -->
+                    {% if user.is_superuser or user.userprofile.role == 'admin' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'admin_dashboard' %}">
+                                <i class="fas fa-tachometer-alt me-1"></i>Admin Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'connecthub:user_management' %}">
+                                <i class="fas fa-users me-1"></i>User Management
+                            </a>
+                        </li>
+                    {% elif user.userprofile.role == 'teacher' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'teacher_dashboard' %}">
+                                <i class="fas fa-chalkboard-teacher me-1"></i>Teacher Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'earlycare:child_list' %}">
+                                <i class="fas fa-child me-1"></i>My Children
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'learnlytics:activity_list' %}">
+                                <i class="fas fa-tasks me-1"></i>Activities
+                            </a>
+                        </li>
+                    {% elif user.userprofile.role == 'parent' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'parent_dashboard' %}">
+                                <i class="fas fa-home me-1"></i>Parent Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'earlycare:child_list' %}">
+                                <i class="fas fa-child me-1"></i>My Children
+                            </a>
+                        </li>
+                    {% elif user.userprofile.role == 'child' %}
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'child_dashboard' %}">
+                                <i class="fas fa-star me-1"></i>My Dashboard
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="{% url 'learnlytics:activity_list' %}">
+                                <i class="fas fa-gamepad me-1"></i>My Activities
+                            </a>
+                        </li>
+                    {% endif %}
+                    
+                    <!-- Common navigation -->
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'connecthub:inbox' %}">
+                            <i class="fas fa-envelope me-1"></i>Messages
+                            {% if unread_messages_count > 0 %}
+                                <span class="badge bg-danger">{{ unread_messages_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'connecthub:notifications' %}">
+                            <i class="fas fa-bell me-1"></i>Notifications
+                            {% if unread_notifications_count > 0 %}
+                                <span class="badge bg-warning">{{ unread_notifications_count }}</span>
+                            {% endif %}
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- User menu -->
+                <ul class="navbar-nav">
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown">
+                            <i class="fas fa-user me-1"></i>{{ user.get_full_name|default:user.username }}
+                        </a>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="{% url 'connecthub:profile' %}">
+                                <i class="fas fa-user-edit me-2"></i>Profile
+                            </a></li>
+                            <li><a class="dropdown-item" href="{% url 'connecthub:settings' %}">
+                                <i class="fas fa-cog me-2"></i>Settings
+                            </a></li>
+                            <li><hr class="dropdown-divider"></li>
+                            <li><a class="dropdown-item" href="{% url 'connecthub:logout' %}">
+                                <i class="fas fa-sign-out-alt me-2"></i>Logout
+                            </a></li>
+                        </ul>
+                    </li>
+                </ul>
+            </div>
+            {% else %}
+            <div class="navbar-nav">
+                <a class="nav-link" href="{% url 'connecthub:login' %}">
+                    <i class="fas fa-sign-in-alt me-1"></i>Login
+                </a>
+                <a class="nav-link" href="{% url 'connecthub:register' %}">
+                    <i class="fas fa-user-plus me-1"></i>Register
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="container-fluid mt-4">
+        <!-- Messages -->
+        {% if messages %}
+            {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+
+        <!-- Page Content -->
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-light mt-5 py-4">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>ECSES</h5>
+                    <p class="text-muted">Early Support in Childhood Educational System</p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <p class="text-muted">&copy; 2024 ECSES. All rights reserved.</p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Bootstrap JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS -->
+    <script src="{% static 'css/js/scripts.js' %}"></script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

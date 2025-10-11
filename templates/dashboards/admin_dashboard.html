@@ -1,0 +1,281 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Admin Dashboard - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-tachometer-alt me-2"></i>Administrator Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- System Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_users }}</h4>
+                        <p class="card-text">Total Users</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_children }}</h4>
+                        <p class="card-text">Children</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-child fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_teachers }}</h4>
+                        <p class="card-text">Teachers</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-chalkboard-teacher fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ total_activities }}</h4>
+                        <p class="card-text">Activities</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- User Management Panel -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-users me-2"></i>User Management
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-4">
+                        <h6>Teachers</h6>
+                        <h4 class="text-primary">{{ teacher_count }}</h4>
+                    </div>
+                    <div class="col-4">
+                        <h6>Parents</h6>
+                        <h4 class="text-success">{{ parent_count }}</h4>
+                    </div>
+                    <div class="col-4">
+                        <h6>Children</h6>
+                        <h4 class="text-warning">{{ child_count }}</h4>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'connecthub:user_management' %}" class="btn btn-primary">
+                        <i class="fas fa-cog me-2"></i>Manage Users
+                    </a>
+                    <a href="{% url 'connecthub:create_user' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-user-plus me-2"></i>Add New User
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- EarlyCare Report Summary -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-heart me-2"></i>EarlyCare Summary
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center">
+                    <div class="col-6">
+                        <h6>Active Assessments</h6>
+                        <h4 class="text-info">{{ active_assessments }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6>Support Plans</h6>
+                        <h4 class="text-success">{{ active_support_plans }}</h4>
+                    </div>
+                </div>
+                <hr>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'earlycare:reports' %}" class="btn btn-info">
+                        <i class="fas fa-chart-line me-2"></i>View Reports
+                    </a>
+                    <a href="{% url 'earlycare:child_list' %}" class="btn btn-outline-info">
+                        <i class="fas fa-child me-2"></i>Manage Children
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- LearnLytics Performance Chart -->
+<div class="row">
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-bar me-2"></i>LearnLytics Performance Overview
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="performanceChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <!-- Message Center Preview -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-envelope me-2"></i>Message Center
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for message in recent_messages %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+                            <small>{{ message.subject|truncatechars:30 }}</small>
+                        </div>
+                        <small class="text-muted">{{ message.created_at|timesince }} ago</small>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p>No recent messages</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr>
+                <div class="d-grid">
+                    <a href="{% url 'connecthub:inbox' %}" class="btn btn-primary">
+                        <i class="fas fa-envelope me-2"></i>View All Messages
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- System Notifications -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bell me-2"></i>System Notifications
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Recent Notifications</h6>
+                        <div class="list-group list-group-flush">
+                            {% for notification in recent_notifications %}
+                            <div class="list-group-item d-flex justify-content-between align-items-start">
+                                <div class="ms-2 me-auto">
+                                    <div class="fw-bold">{{ notification.title }}</div>
+                                    <small>{{ notification.message|truncatechars:50 }}</small>
+                                </div>
+                                <span class="badge bg-{{ notification.notification_type }} rounded-pill">
+                                    {{ notification.get_notification_type_display }}
+                                </span>
+                            </div>
+                            {% empty %}
+                            <div class="text-center text-muted">
+                                <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                                <p>No recent notifications</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Quick Actions</h6>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'connecthub:send_notification' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-bullhorn me-2"></i>Send System Notification
+                            </a>
+                            <a href="{% url 'learnlytics:reports' %}" class="btn btn-outline-success">
+                                <i class="fas fa-file-alt me-2"></i>Generate Reports
+                            </a>
+                            <a href="{% url 'admin:index' %}" class="btn btn-outline-warning">
+                                <i class="fas fa-cog me-2"></i>Django Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Performance Chart
+const ctx = document.getElementById('performanceChart').getContext('2d');
+const performanceChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ chart_labels|safe }},
+        datasets: [{
+            label: 'Activity Completions',
+            data: {{ chart_data|safe }},
+            borderColor: 'rgb(75, 192, 192)',
+            backgroundColor: 'rgba(75, 192, 192, 0.2)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+

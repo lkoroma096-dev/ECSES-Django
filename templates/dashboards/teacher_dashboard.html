@@ -1,0 +1,318 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Teacher Dashboard - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <h1 class="mb-4">
+            <i class="fas fa-chalkboard-teacher me-2"></i>Teacher Dashboard
+        </h1>
+    </div>
+</div>
+
+<!-- Teacher Overview Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ assigned_children_count }}</h4>
+                        <p class="card-text">My Children</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-child fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ pending_assessments }}</h4>
+                        <p class="card-text">Pending Assessments</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-clipboard-check fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ unread_messages }}</h4>
+                        <p class="card-text">Unread Messages</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-envelope fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h4 class="card-title">{{ active_activities }}</h4>
+                        <p class="card-text">Active Activities</p>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-tasks fa-2x"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Main Content Row -->
+<div class="row">
+    <!-- Assigned Children List -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-child me-2"></i>My Assigned Children
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if assigned_children %}
+                <div class="list-group list-group-flush">
+                    {% for child in assigned_children %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ child.first_name }} {{ child.last_name }}</div>
+                            <small class="text-muted">Age: {{ child.age_in_months }} months</small>
+                        </div>
+                        <div class="text-end">
+                            <a href="{% url 'earlycare:child_detail' child.id %}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-eye me-1"></i>View
+                            </a>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted">
+                    <i class="fas fa-child fa-3x mb-3"></i>
+                    <p>No children assigned yet</p>
+                </div>
+                {% endif %}
+                <hr>
+                <div class="d-grid">
+                    <a href="{% url 'earlycare:child_list' %}" class="btn btn-primary">
+                        <i class="fas fa-list me-2"></i>View All Children
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Shortcuts -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Assessment Tools
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row text-center mb-3">
+                    <div class="col-6">
+                        <h6>Due This Week</h6>
+                        <h4 class="text-warning">{{ assessments_due_this_week }}</h4>
+                    </div>
+                    <div class="col-6">
+                        <h6>Completed</h6>
+                        <h4 class="text-success">{{ completed_assessments }}</h4>
+                    </div>
+                </div>
+                <div class="d-grid gap-2">
+                    <a href="{% url 'earlycare:assessment_new' %}" class="btn btn-success">
+                        <i class="fas fa-plus me-2"></i>New Assessment
+                    </a>
+                    <a href="{% url 'earlycare:assessments' %}" class="btn btn-outline-success">
+                        <i class="fas fa-list me-2"></i>View All Assessments
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Messages and Child Progress -->
+<div class="row">
+    <!-- Recent Messages -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-envelope me-2"></i>Recent Messages
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for message in recent_messages %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ message.sender.get_full_name|default:message.sender.username }}</div>
+                            <small>{{ message.subject|truncatechars:40 }}</small>
+                        </div>
+                        <small class="text-muted">{{ message.created_at|timesince }} ago</small>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-inbox fa-2x mb-2"></i>
+                        <p>No recent messages</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr>
+                <div class="d-grid">
+                    <a href="{% url 'connecthub:inbox' %}" class="btn btn-primary">
+                        <i class="fas fa-envelope me-2"></i>View All Messages
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Child Progress Trends -->
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Child Progress Trends
+                </h5>
+            </div>
+            <div class="card-body">
+                <canvas id="progressChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Actions and Notifications -->
+<div class="row">
+    <!-- Quick Actions -->
+    <div class="col-md-8 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bolt me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6 mb-3">
+                        <h6>EarlyCare Tools</h6>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'earlycare:child_new' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-user-plus me-2"></i>Add New Child
+                            </a>
+                            <a href="{% url 'earlycare:support_plans' %}" class="btn btn-outline-success">
+                                <i class="fas fa-clipboard-list me-2"></i>Support Plans
+                            </a>
+                            <a href="{% url 'earlycare:reports' %}" class="btn btn-outline-info">
+                                <i class="fas fa-chart-bar me-2"></i>Progress Reports
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-md-6 mb-3">
+                        <h6>LearnLytics Tools</h6>
+                        <div class="d-grid gap-2">
+                            <a href="{% url 'learnlytics:activity_new' %}" class="btn btn-outline-warning">
+                                <i class="fas fa-plus me-2"></i>Create Activity
+                            </a>
+                            <a href="{% url 'learnlytics:assign_activity' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-tasks me-2"></i>Assign Activity
+                            </a>
+                            <a href="{% url 'learnlytics:dashboard' %}" class="btn btn-outline-dark">
+                                <i class="fas fa-chart-pie me-2"></i>Analytics Dashboard
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Recent Notifications -->
+    <div class="col-md-4 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-bell me-2"></i>Notifications
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for notification in recent_notifications %}
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="fw-bold">{{ notification.title }}</div>
+                            <small>{{ notification.message|truncatechars:30 }}</small>
+                        </div>
+                        <span class="badge bg-{{ notification.notification_type }} rounded-pill">
+                            {{ notification.get_notification_type_display }}
+                        </span>
+                    </div>
+                    {% empty %}
+                    <div class="text-center text-muted">
+                        <i class="fas fa-bell-slash fa-2x mb-2"></i>
+                        <p>No notifications</p>
+                    </div>
+                    {% endfor %}
+                </div>
+                <hr>
+                <div class="d-grid">
+                    <a href="{% url 'connecthub:notifications' %}" class="btn btn-outline-primary">
+                        <i class="fas fa-bell me-2"></i>View All
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Progress Chart
+const progressCtx = document.getElementById('progressChart').getContext('2d');
+const progressChart = new Chart(progressCtx, {
+    type: 'bar',
+    data: {
+        labels: {{ progress_labels|safe }},
+        datasets: [{
+            label: 'Average Progress Score',
+            data: {{ progress_data|safe }},
+            backgroundColor: 'rgba(54, 162, 235, 0.6)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        scales: {
+            y: {
+                beginAtZero: true,
+                max: 5
+            }
+        }
+    }
+});
+</script>
+{% endblock %}
+

@@ -1,0 +1,130 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Welcome to ECSES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8 text-center">
+        <div class="jumbotron bg-primary text-white rounded p-5 mb-5">
+            <h1 class="display-4">
+                <i class="fas fa-graduation-cap me-3"></i>Welcome to ECSES
+            </h1>
+            <p class="lead">Early Support in Childhood Educational System</p>
+            <p class="mb-4">A comprehensive platform for early childhood development, learning, and support.</p>
+            
+            {% if not user.is_authenticated %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{% url 'connecthub:login' %}" class="btn btn-light btn-lg me-md-2">
+                    <i class="fas fa-sign-in-alt me-2"></i>Login
+                </a>
+                <a href="{% url 'connecthub:register' %}" class="btn btn-outline-light btn-lg">
+                    <i class="fas fa-user-plus me-2"></i>Register
+                </a>
+            </div>
+            {% else %}
+            <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+                <a href="{% url 'home' %}" class="btn btn-light btn-lg">
+                    <i class="fas fa-tachometer-alt me-2"></i>Go to Dashboard
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Features Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">Our Features</h2>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-heart fa-3x text-primary mb-3"></i>
+                <h5 class="card-title">EarlyCare</h5>
+                <p class="card-text">Comprehensive child development tracking, assessments, and individualized support plans.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-chart-line fa-3x text-success mb-3"></i>
+                <h5 class="card-title">LearnLytics</h5>
+                <p class="card-text">Interactive learning activities, progress analytics, and achievement tracking.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 mb-4">
+        <div class="card h-100 text-center">
+            <div class="card-body">
+                <i class="fas fa-users fa-3x text-info mb-3"></i>
+                <h5 class="card-title">ConnectHub</h5>
+                <p class="card-text">Seamless communication between teachers, parents, and administrators.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- User Roles Section -->
+<div class="row mb-5">
+    <div class="col-12">
+        <h2 class="text-center mb-4">For Every User</h2>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-primary">
+            <div class="card-body text-center">
+                <i class="fas fa-user-shield fa-2x text-primary mb-2"></i>
+                <h6 class="card-title">Administrators</h6>
+                <p class="card-text small">Manage users, view system analytics, and oversee operations.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-success">
+            <div class="card-body text-center">
+                <i class="fas fa-chalkboard-teacher fa-2x text-success mb-2"></i>
+                <h6 class="card-title">Teachers</h6>
+                <p class="card-text small">Conduct assessments, create activities, and track student progress.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-warning">
+            <div class="card-body text-center">
+                <i class="fas fa-home fa-2x text-warning mb-2"></i>
+                <h6 class="card-title">Parents</h6>
+                <p class="card-text small">Monitor your child's progress and communicate with teachers.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3 mb-3">
+        <div class="card border-info">
+            <div class="card-body text-center">
+                <i class="fas fa-star fa-2x text-info mb-2"></i>
+                <h6 class="card-title">Children</h6>
+                <p class="card-text small">Engage in fun learning activities and earn badges.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Call to Action -->
+{% if not user.is_authenticated %}
+<div class="row">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body text-center">
+                <h3 class="card-title">Ready to Get Started?</h3>
+                <p class="card-text">Join our community and start supporting early childhood development today.</p>
+                <a href="{% url 'connecthub:register' %}" class="btn btn-primary btn-lg">
+                    <i class="fas fa-rocket me-2"></i>Get Started Now
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+

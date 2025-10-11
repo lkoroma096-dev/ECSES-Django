@@ -1,0 +1,269 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Notifications - ECSES{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <!-- Page Header -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center">
+                <div>
+                    <h2 class="mb-1">
+                        <i class="fas fa-bell me-2 text-primary"></i>Notifications
+                    </h2>
+                    <p class="text-muted mb-0">Stay updated with system notifications and alerts</p>
+                </div>
+                <div>
+                    {% if user.is_superuser or user.userprofile.role == 'admin' %}
+                        <a href="{% url 'connecthub:send_notification' %}" class="btn btn-primary">
+                            <i class="fas fa-bullhorn me-2"></i>Send Notification
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notifications List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bell me-2"></i>All Notifications
+                        {% if unread_count > 0 %}
+                            <span class="badge bg-warning ms-2">{{ unread_count }} unread</span>
+                        {% endif %}
+                    </h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if notifications %}
+                        <div class="list-group list-group-flush">
+                            {% for notification in notifications %}
+                            <div class="list-group-item {% if not notification.is_read %}bg-light{% endif %}">
+                                <div class="d-flex w-100 justify-content-between align-items-start">
+                                    <div class="ms-2 me-auto">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <div class="me-3">
+                                                {% if notification.notification_type == 'info' %}
+                                                    <i class="fas fa-info-circle fa-lg text-info"></i>
+                                                {% elif notification.notification_type == 'success' %}
+                                                    <i class="fas fa-check-circle fa-lg text-success"></i>
+                                                {% elif notification.notification_type == 'warning' %}
+                                                    <i class="fas fa-exclamation-triangle fa-lg text-warning"></i>
+                                                {% elif notification.notification_type == 'error' %}
+                                                    <i class="fas fa-exclamation-circle fa-lg text-danger"></i>
+                                                {% else %}
+                                                    <i class="fas fa-bell fa-lg text-primary"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div class="flex-grow-1">
+                                                <h6 class="mb-1 {% if not notification.is_read %}fw-bold{% endif %}">
+                                                    {{ notification.title }}
+                                                </h6>
+                                                <p class="mb-1">{{ notification.message }}</p>
+                                                <small class="text-muted">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    {{ notification.created_at|timesince }} ago
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="text-end">
+                                        <span class="badge bg-{{ notification.notification_type }} rounded-pill mb-2">
+                                            {{ notification.get_notification_type_display }}
+                                        </span>
+                                        <br>
+                                        {% if not notification.is_read %}
+                                            <span class="badge bg-primary rounded-pill">New</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                
+                                <!-- Notification Actions -->
+                                <div class="mt-2">
+                                    <div class="btn-group btn-group-sm" role="group">
+                                        {% if not notification.is_read %}
+                                            <a href="{% url 'connecthub:mark_notification_read' notification.id %}" 
+                                               class="btn btn-outline-success">
+                                                <i class="fas fa-check me-1"></i>Mark as Read
+                                            </a>
+                                        {% endif %}
+                                        <a href="{% url 'connecthub:notification_detail' notification.id %}" 
+                                           class="btn btn-outline-primary">
+                                            <i class="fas fa-eye me-1"></i>View Details
+                                        </a>
+                                        {% if user.is_superuser or user.userprofile.role == 'admin' %}
+                                            <a href="{% url 'connecthub:edit_notification' notification.id %}" 
+                                               class="btn btn-outline-secondary">
+                                                <i class="fas fa-edit me-1"></i>Edit
+                                            </a>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Pagination -->
+                        {% if notifications.has_other_pages %}
+                        <div class="card-footer">
+                            <nav aria-label="Notification pagination">
+                                <ul class="pagination pagination-sm justify-content-center mb-0">
+                                    {% if notifications.has_previous %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page=1">First</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ notifications.previous_page_number }}">Previous</a>
+                                        </li>
+                                    {% endif %}
+                                    
+                                    <li class="page-item active">
+                                        <span class="page-link">
+                                            Page {{ notifications.number }} of {{ notifications.paginator.num_pages }}
+                                        </span>
+                                    </li>
+                                    
+                                    {% if notifications.has_next %}
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ notifications.next_page_number }}">Next</a>
+                                        </li>
+                                        <li class="page-item">
+                                            <a class="page-link" href="?page={{ notifications.paginator.num_pages }}">Last</a>
+                                        </li>
+                                    {% endif %}
+                                </ul>
+                            </nav>
+                        </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-bell-slash fa-3x text-muted mb-3"></i>
+                            <h5 class="text-muted">No notifications yet</h5>
+                            <p class="text-muted">You'll receive notifications about important updates and activities.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notification Statistics -->
+    <div class="row mt-4">
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-bell fa-2x text-primary mb-2"></i>
+                    <h5 class="card-title">{{ notifications|length }}</h5>
+                    <p class="card-text text-muted">Total Notifications</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-envelope-open fa-2x text-success mb-2"></i>
+                    <h5 class="card-title">{{ notifications|length|add:"-"|add:unread_count|default:0 }}</h5>
+                    <p class="card-text text-muted">Read</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-envelope fa-2x text-warning mb-2"></i>
+                    <h5 class="card-title">{{ unread_count }}</h5>
+                    <p class="card-text text-muted">Unread</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-center">
+                <div class="card-body">
+                    <i class="fas fa-info-circle fa-2x text-info mb-2"></i>
+                    <h5 class="card-title">{{ notifications|length }}</h5>
+                    <p class="card-text text-muted">This Month</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row mt-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="fas fa-bolt me-2"></i>Quick Actions
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:notifications' %}?filter=unread" class="btn btn-warning w-100">
+                                <i class="fas fa-envelope me-2"></i>Unread Only
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:notifications' %}?filter=today" class="btn btn-outline-primary w-100">
+                                <i class="fas fa-calendar-day me-2"></i>Today
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:notifications' %}?filter=week" class="btn btn-outline-success w-100">
+                                <i class="fas fa-calendar-week me-2"></i>This Week
+                            </a>
+                        </div>
+                        <div class="col-md-3 mb-2">
+                            <a href="{% url 'connecthub:mark_all_read' %}" class="btn btn-outline-info w-100">
+                                <i class="fas fa-check-double me-2"></i>Mark All Read
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.card {
+    border: none;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+.list-group-item {
+    border-left: none;
+    border-right: none;
+}
+
+.list-group-item:first-child {
+    border-top: none;
+}
+
+.list-group-item:last-child {
+    border-bottom: none;
+}
+
+.bg-light {
+    background-color: rgba(13, 110, 253, 0.1) !important;
+}
+
+.btn-group .btn {
+    border-radius: 0.25rem;
+}
+
+.btn-group .btn:not(:last-child) {
+    margin-right: 0.25rem;
+}
+</style>
+{% endblock %}
