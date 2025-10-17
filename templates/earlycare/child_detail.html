@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}{{ child.first_name }} {{ child.last_name }} - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-child me-2"></i>{{ child.first_name }} {{ child.last_name }}
+            </h1>
+            <div>
+                <a href="{% url 'earlycare:support_plan' child.id %}" class="btn btn-info me-2">
+                    <i class="fas fa-clipboard-list me-1"></i>Support Plan
+                </a>
+                <a href="{% url 'earlycare:child_list' %}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-1"></i>Back to List
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Child Information Card -->
+<div class="row mb-4">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user me-2"></i>Child Information
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Full Name:</strong> {{ child.first_name }} {{ child.last_name }}</p>
+                        <p><strong>Age:</strong> {{ child.age_in_months }} months</p>
+                        <p><strong>Gender:</strong> {{ child.get_gender_display }}</p>
+                        <p><strong>Date of Birth:</strong> {{ child.date_of_birth|date:"F d, Y" }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Status:</strong> 
+                            <span class="badge bg-{% if child.is_active %}success{% else %}secondary{% endif %}">
+                                {% if child.is_active %}Active{% else %}Inactive{% endif %}
+                            </span>
+                        </p>
+                        {% if child.teacher %}
+                        <p><strong>Teacher:</strong> {{ child.teacher.get_full_name|default:child.teacher.username }}</p>
+                        {% endif %}
+                        {% if child.parent %}
+                        <p><strong>Parent:</strong> {{ child.parent.get_full_name|default:child.parent.username }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                {% if child.medical_conditions %}
+                <hr>
+                <h6>Medical Conditions</h6>
+                <p>{{ child.medical_conditions }}</p>
+                {% endif %}
+                
+                {% if child.emergency_contact %}
+                <hr>
+                <h6>Emergency Contact</h6>
+                <p><strong>Name:</strong> {{ child.emergency_contact }}</p>
+                {% if child.emergency_phone %}
+                <p><strong>Phone:</strong> {{ child.emergency_phone }}</p>
+                {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-chart-line me-2"></i>Quick Stats
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-3">
+                    <h4 class="text-primary">{{ recent_assessments|length }}</h4>
+                    <p class="text-muted mb-0">Recent Assessments</p>
+                </div>
+                <div class="text-center mb-3">
+                    <h4 class="text-success">{{ recent_reports|length }}</h4>
+                    <p class="text-muted mb-0">Progress Reports</p>
+                </div>
+                <div class="text-center">
+                    <h4 class="text-info">{% if support_plan %}1{% else %}0{% endif %}</h4>
+                    <p class="text-muted mb-0">Support Plans</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Recent Assessments -->
+{% if recent_assessments %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Recent Assessments
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date</th>
+                                <th>Type</th>
+                                <th>Motor</th>
+                                <th>Cognitive</th>
+                                <th>Language</th>
+                                <th>Social</th>
+                                <th>Adaptive</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for assessment in recent_assessments %}
+                            <tr>
+                                <td>{{ assessment.assessment_date|date:"M d, Y" }}</td>
+                                <td>{{ assessment.get_assessment_type_display }}</td>
+                                <td>{{ assessment.motor_score|default:"-" }}</td>
+                                <td>{{ assessment.cognitive_score|default:"-" }}</td>
+                                <td>{{ assessment.language_score|default:"-" }}</td>
+                                <td>{{ assessment.social_score|default:"-" }}</td>
+                                <td>{{ assessment.adaptive_score|default:"-" }}</td>
+                                <td>
+                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assessmentModal{{ assessment.id }}">
+                                        <i class="fas fa-eye"></i>
+                                    </button>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Recent Progress Reports -->
+{% if recent_reports %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-file-alt me-2"></i>Recent Progress Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    {% for report in recent_reports %}
+                    <div class="list-group-item">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">{{ report.title }}</h6>
+                            <small class="text-muted">{{ report.report_date|date:"M d, Y" }}</small>
+                        </div>
+                        <p class="mb-1">{{ report.summary|truncatechars:150 }}</p>
+                        <small class="text-muted">Created by: {{ report.created_by.get_full_name|default:report.created_by.username }}</small>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Support Plan Summary -->
+{% if support_plan %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Current Support Plan
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Goals</h6>
+                        <p>{{ support_plan.goals }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Strategies</h6>
+                        <p>{{ support_plan.strategies }}</p>
+                    </div>
+                </div>
+                {% if support_plan.resources_needed %}
+                <hr>
+                <h6>Resources Needed</h6>
+                <p>{{ support_plan.resources_needed }}</p>
+                {% endif %}
+                {% if support_plan.timeline %}
+                <hr>
+                <h6>Timeline</h6>
+                <p>{{ support_plan.timeline }}</p>
+                {% endif %}
+                <div class="d-grid">
+                    <a href="{% url 'earlycare:support_plan' child.id %}" class="btn btn-primary">
+                        <i class="fas fa-edit me-1"></i>View Full Support Plan
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Assessment Modals -->
+{% for assessment in recent_assessments %}
+<div class="modal fade" id="assessmentModal{{ assessment.id }}" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">{{ assessment.get_assessment_type_display }} Assessment</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <p><strong>Date:</strong> {{ assessment.assessment_date|date:"F d, Y" }}</p>
+                        <p><strong>Assessor:</strong> {{ assessment.assessor.get_full_name|default:assessment.assessor.username }}</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Motor Score:</strong> {{ assessment.motor_score|default:"Not assessed" }}</p>
+                        <p><strong>Cognitive Score:</strong> {{ assessment.cognitive_score|default:"Not assessed" }}</p>
+                        <p><strong>Language Score:</strong> {{ assessment.language_score|default:"Not assessed" }}</p>
+                        <p><strong>Social Score:</strong> {{ assessment.social_score|default:"Not assessed" }}</p>
+                        <p><strong>Adaptive Score:</strong> {{ assessment.adaptive_score|default:"Not assessed" }}</p>
+                    </div>
+                </div>
+                {% if assessment.notes %}
+                <hr>
+                <h6>Notes</h6>
+                <p>{{ assessment.notes }}</p>
+                {% endif %}
+                {% if assessment.recommendations %}
+                <hr>
+                <h6>Recommendations</h6>
+                <p>{{ assessment.recommendations }}</p>
+                {% endif %}
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endfor %}
+{% endblock %}

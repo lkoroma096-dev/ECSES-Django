@@ -1,0 +1,110 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Support Plan - {{ child.first_name }} {{ child.last_name }} - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-clipboard-list me-2"></i>Support Plan - {{ child.first_name }} {{ child.last_name }}
+            </h1>
+            <a href="{% url 'earlycare:child_detail' child.id %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Child
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-edit me-2"></i>{% if support_plan %}Edit Support Plan{% else %}Create Support Plan{% endif %}
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="goals" class="form-label">Goals *</label>
+                        <textarea class="form-control" id="goals" name="goals" rows="4" required placeholder="Describe the specific goals for this child's development and learning...">{% if support_plan %}{{ support_plan.goals }}{% endif %}</textarea>
+                        <div class="form-text">Be specific and measurable. What do we want to achieve?</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="strategies" class="form-label">Strategies *</label>
+                        <textarea class="form-control" id="strategies" name="strategies" rows="4" required placeholder="Describe the strategies and approaches to achieve these goals...">{% if support_plan %}{{ support_plan.strategies }}{% endif %}</textarea>
+                        <div class="form-text">How will we work towards these goals? What methods will be used?</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="resources_needed" class="form-label">Resources Needed</label>
+                        <textarea class="form-control" id="resources_needed" name="resources_needed" rows="3" placeholder="List any resources, materials, or support needed...">{% if support_plan %}{{ support_plan.resources_needed }}{% endif %}</textarea>
+                        <div class="form-text">What materials, equipment, or additional support is required?</div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="timeline" class="form-label">Timeline</label>
+                        <textarea class="form-control" id="timeline" name="timeline" rows="3" placeholder="Describe the timeline and milestones...">{% if support_plan %}{{ support_plan.timeline }}{% endif %}</textarea>
+                        <div class="form-text">When should these goals be achieved? What are the key milestones?</div>
+                    </div>
+                    
+                    {% if support_plan %}
+                    <div class="mb-4">
+                        <div class="alert alert-info">
+                            <h6><i class="fas fa-info-circle me-2"></i>Plan Information</h6>
+                            <p class="mb-1"><strong>Created:</strong> {{ support_plan.created_at|date:"F d, Y" }}</p>
+                            <p class="mb-0"><strong>Created by:</strong> {{ support_plan.created_by.get_full_name|default:support_plan.created_by.username }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'earlycare:child_detail' child.id %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>{% if support_plan %}Update Plan{% else %}Create Plan{% endif %}
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Support Plan Guidelines -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6><i class="fas fa-lightbulb me-2"></i>Support Plan Guidelines</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Goals should be:</h6>
+                        <ul class="small">
+                            <li>Specific and measurable</li>
+                            <li>Age-appropriate</li>
+                            <li>Focused on child's strengths</li>
+                            <li>Challenging but achievable</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Strategies should:</h6>
+                        <ul class="small">
+                            <li>Be evidence-based</li>
+                            <li>Include family involvement</li>
+                            <li>Consider child's interests</li>
+                            <li>Be adaptable and flexible</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

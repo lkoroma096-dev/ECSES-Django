@@ -7,8 +7,7 @@ from django.db.models import Q, Count
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .models import UserProfile, Message, Notification
-from earlycare.models import Child, Assessment, SupportPlan, ProgressReport
-from learnlytics.models import Activity, ActivityAssignment, Badge, ChildBadge, PerformanceMetric, Report
+# NOTE: Import app models lazily inside views to avoid ImportError when optional apps are absent
 
 def home(request):
     """Home page with role-based redirect"""
@@ -114,7 +113,7 @@ def notifications(request):
         'notifications': notifications_page,
         'unread_count': Notification.objects.filter(user=request.user, is_read=False).count()
     }
-    return render(request, 'dashboards/admin_dashboard.html', context)
+    return render(request, 'connecthub/notifications.html', context)
 
 @login_required
 def admin_dashboard(request):
@@ -322,6 +321,72 @@ def parent_dashboard(request):
     return render(request, 'dashboards/parent_dashboard.html', context)
 
 @login_required
+def parent_view_children(request):
+    """Parent view children dashboard"""
+    if not (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'parent'):
+        messages.error(request, 'Access denied. Parent privileges required.')
+        return redirect('home')
+    
+    # Get parent's children
+    if 'earlycare' in globals():
+        my_children = Child.objects.filter(parent=request.user)
+        my_children_count = my_children.count()
+    else:
+        my_children = []
+        my_children_count = 0
+    
+    # Get support plans for parent's children
+    support_plans = []
+    if my_children_count > 0:
+        try:
+            from earlycare.models import SupportPlan
+            support_plans = SupportPlan.objects.filter(child__in=my_children).order_by('-created_at')[:5]
+        except Exception:
+            pass
+    
+    # Get recent progress reports
+    recent_progress_reports = 0
+    if my_children_count > 0:
+        try:
+            from earlycare.models import ProgressReport
+            recent_progress_reports = ProgressReport.objects.filter(child__in=my_children).count()
+        except Exception:
+            pass
+    
+    # Get total badges earned by children
+    total_badges = 0
+    if my_children_count > 0:
+        try:
+            from learnlytics.models import ChildBadge
+            total_badges = ChildBadge.objects.filter(child__in=my_children).count()
+        except Exception:
+            pass
+    
+    # Add progress data for children
+    for child in my_children:
+        # Calculate overall progress (mock calculation)
+        child.overall_progress = min(100, (child.age_in_months * 2) + 20)
+        
+        # Calculate activity completion (mock calculation)
+        child.activity_completion = min(100, (child.age_in_months * 3) + 10)
+        
+        # Get recent badges for this child
+        try:
+            from learnlytics.models import ChildBadge
+            child.recent_badges = ChildBadge.objects.filter(child=child).order_by('-earned_date')[:3]
+        except Exception:
+            child.recent_badges = []
+    
+    context = {
+        'my_children': my_children,
+        'my_children_count': my_children_count,
+        'recent_progress_reports': recent_progress_reports,
+        'total_badges': total_badges,
+        'support_plans': support_plans,
+    }
+    return render(request, 'dashboards/parent_view_children.html', context)
+
+@login_required
 def child_dashboard(request):
     """Child dashboard view"""
     if not (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'child'):
@@ -332,21 +397,36 @@ def child_dashboard(request):
     my_activities = []
     my_activities_count = 0
     completed_activities = 0
-    
-    if 'learnlytics' in globals():
-        from learnlytics.models import ActivityAssignment
-        my_activities = ActivityAssignment.objects.filter(child__user=request.user).order_by('-assigned_date')[:6]
-        my_activities_count = ActivityAssignment.objects.filter(child__user=request.user).count()
-        completed_activities = ActivityAssignment.objects.filter(child__user=request.user, status='completed').count()
+    next_activity = None
+
+    # Import learnlytics models safely; if unavailable, keep defaults
+    try:
+        from learnlytics.models import ActivityAssignment, ChildBadge  # type: ignore
+        assignments_qs = ActivityAssignment.objects.filter(child__user=request.user)
+        my_activities = assignments_qs.order_by('-assigned_date')[:6]
+        my_activities_count = assignments_qs.count()
+        completed_activities = assignments_qs.filter(status='completed').count()
+
+        # Determine a next actionable activity
+        next_activity = (
+            assignments_qs.filter(status='assigned').order_by('due_date', '-assigned_date').first()
+            or assignments_qs.filter(status='in_progress').order_by('due_date', '-assigned_date').first()
+        )
+    except Exception:
+        # Silently continue; template has empty states and we avoid hard failures
+        ChildBadge = None  # noqa: N806 - used below for conditional import check
     
     # Get badges
     my_badges = []
     my_badges_count = 0
-    
-    if 'learnlytics' in globals():
-        from learnlytics.models import ChildBadge
-        my_badges = ChildBadge.objects.filter(child__user=request.user).order_by('-earned_date')[:6]
-        my_badges_count = ChildBadge.objects.filter(child__user=request.user).count()
+    try:
+        # If previous try failed, ChildBadge will be None and this will raise
+        if ChildBadge:  # type: ignore[name-defined]
+            badges_qs = ChildBadge.objects.filter(child__user=request.user)
+            my_badges = badges_qs.order_by('-earned_date')[:6]
+            my_badges_count = badges_qs.count()
+    except Exception:
+        pass
     
     # Calculate points (mock data based on activities and badges)
     my_points = (completed_activities * 10) + (my_badges_count * 25)
@@ -362,8 +442,8 @@ def child_dashboard(request):
     
     # Teacher feedback (mock data)
     teacher_feedback = []
-    if my_activities.exists():
-        # Create mock feedback for completed activities
+    # Only attempt queryset methods when we truly have a queryset
+    if hasattr(my_activities, 'filter'):
         for activity in my_activities.filter(status='completed')[:3]:
             feedback_item = type('MockFeedback', (), {
                 'activity': activity.activity,
@@ -386,6 +466,7 @@ def child_dashboard(request):
         'activities_this_week': activities_this_week,
         'activities_this_month': activities_this_month,
         'teacher_feedback': teacher_feedback,
+        'next_activity': next_activity,
     }
     return render(request, 'dashboards/child_dashboard.html', context)
 

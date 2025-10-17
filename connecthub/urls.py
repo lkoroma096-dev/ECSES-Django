@@ -15,6 +15,7 @@ urlpatterns = [
     path('admin-dashboard/', views.admin_dashboard, name='admin_dashboard'),
     path('teacher-dashboard/', views.teacher_dashboard, name='teacher_dashboard'),
     path('parent-dashboard/', views.parent_dashboard, name='parent_dashboard'),
+    path('parent-view-children/', views.parent_view_children, name='parent_view_children'),
     path('child-dashboard/', views.child_dashboard, name='child_dashboard'),
     path('user-management/', views.user_management, name='user_management'),
     path('create-user/', views.create_user, name='create_user'),

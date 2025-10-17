@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 class Activity(models.Model):
     """Educational activities for children"""
@@ -31,15 +32,15 @@ class Activity(models.Model):
     difficulty_level = models.IntegerField(choices=DIFFICULTY_LEVELS, default=1)
     
     # Activity details
-    instructions = models.TextField(help_text="Step-by-step instructions")
+    instructions = models.TextField(help_text="Step-by-step instructions", default="Instructions will be provided here.")
     materials_needed = models.TextField(blank=True, help_text="Required materials")
-    estimated_duration = models.IntegerField(help_text="Duration in minutes")
-    age_range_min = models.IntegerField(help_text="Minimum age in months")
-    age_range_max = models.IntegerField(help_text="Maximum age in months")
+    estimated_duration = models.IntegerField(help_text="Duration in minutes", default=30)
+    age_range_min = models.IntegerField(help_text="Minimum age in months", default=0)
+    age_range_max = models.IntegerField(help_text="Maximum age in months", default=60)
     
     # Learning objectives
-    learning_objectives = models.TextField(help_text="What children will learn")
-    skills_developed = models.TextField(help_text="Skills this activity develops")
+    learning_objectives = models.TextField(help_text="What children will learn", default="Learning objectives will be defined here.")
+    skills_developed = models.TextField(help_text="Skills this activity develops", default="Skills developed will be listed here.")
     
     # System fields
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_activities')
@@ -77,6 +78,8 @@ class ActivityAssignment(models.Model):
     started_at = models.DateTimeField(null=True, blank=True)
     completed_at = models.DateTimeField(null=True, blank=True)
     completion_notes = models.TextField(blank=True)
+    progress_percentage = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
+    notes = models.TextField(blank=True)
     
     class Meta:
         unique_together = ['child', 'activity']
@@ -89,7 +92,7 @@ class ActivityAssignment(models.Model):
 
 class Badge(models.Model):
     """Achievement badges for children"""
-    BADGE_TYPES = [
+    CATEGORY_CHOICES = [
         ('achievement', 'Achievement'),
         ('participation', 'Participation'),
         ('improvement', 'Improvement'),
@@ -99,20 +102,20 @@ class Badge(models.Model):
     
     name = models.CharField(max_length=100)
     description = models.TextField()
-    badge_type = models.CharField(max_length=20, choices=BADGE_TYPES)
+    category = models.CharField(max_length=20, choices=CATEGORY_CHOICES, default='achievement')
     icon = models.CharField(max_length=50, help_text="Icon class or image name")
     color = models.CharField(max_length=7, default='#FFD700', help_text="Hex color code")
     
     # Requirements
-    points_required = models.IntegerField(default=0, help_text="Points needed to earn this badge")
-    activities_required = models.IntegerField(default=0, help_text="Number of activities to complete")
+    points_value = models.IntegerField(default=10, help_text="Points awarded for this badge")
+    criteria = models.TextField(help_text="Description of how to earn this badge", default="Complete activities to earn this badge.")
     
     # System fields
     is_active = models.BooleanField(default=True)
     created_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
-        ordering = ['points_required', 'name']
+        ordering = ['points_value', 'name']
         verbose_name = "Badge"
         verbose_name_plural = "Badges"
     
@@ -124,7 +127,9 @@ class ChildBadge(models.Model):
     child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, related_name='earned_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='child_badges')
     earned_date = models.DateTimeField(auto_now_add=True)
+    awarded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='awarded_badges', null=True, blank=True)
     earned_for_activity = models.ForeignKey(ActivityAssignment, on_delete=models.SET_NULL, null=True, blank=True)
+    notes = models.TextField(blank=True)
     
     class Meta:
         unique_together = ['child', 'badge']
@@ -147,18 +152,15 @@ class PerformanceMetric(models.Model):
     ]
     
     child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, related_name='performance_metrics')
-    metric_type = models.CharField(max_length=20, choices=METRIC_TYPES)
-    value = models.FloatField(help_text="Metric value")
-    max_value = models.FloatField(default=100, help_text="Maximum possible value")
-    
-    # Context
     activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True)
-    period_start = models.DateField(help_text="Start of measurement period")
-    period_end = models.DateField(help_text="End of measurement period")
+    score = models.FloatField(help_text="Performance score", default=0.0)
+    time_spent = models.IntegerField(help_text="Time spent in minutes", default=0)
+    attempts = models.IntegerField(help_text="Number of attempts", default=1)
+    accuracy = models.FloatField(help_text="Accuracy percentage", default=0.0)
+    completion_rate = models.FloatField(help_text="Completion rate percentage", default=0.0)
     
     # Additional data
     notes = models.TextField(blank=True)
-    recorded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='recorded_metrics')
     recorded_at = models.DateTimeField(auto_now_add=True)
     
     class Meta:
@@ -167,11 +169,7 @@ class PerformanceMetric(models.Model):
         verbose_name_plural = "Performance Metrics"
     
     def __str__(self):
-        return f"{self.child} - {self.get_metric_type_display()}: {self.value}"
-    
-    @property
-    def percentage(self):
-        return (self.value / self.max_value) * 100 if self.max_value > 0 else 0
+        return f"{self.child} - {self.activity.title if self.activity else 'General'}: {self.score}"
 
 class Report(models.Model):
     """Analytics and performance reports"""
@@ -184,19 +182,21 @@ class Report(models.Model):
     ]
     
     title = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
     report_type = models.CharField(max_length=30, choices=REPORT_TYPES)
     generated_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='generated_reports')
     generated_at = models.DateTimeField(auto_now_add=True)
     
     # Report scope
     child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, null=True, blank=True, related_name='reports')
-    date_from = models.DateField()
-    date_to = models.DateField()
+    start_date = models.DateField(help_text="Start date for report data")
+    end_date = models.DateField(help_text="End date for report data")
     
     # Report content
-    summary = models.TextField(help_text="Executive summary")
-    key_findings = models.TextField(help_text="Key findings and insights")
-    recommendations = models.TextField(help_text="Recommendations based on data")
+    summary = models.TextField(help_text="Executive summary", default="Report summary will be provided here.")
+    data = models.JSONField(null=True, blank=True, help_text="Report data in JSON format")
+    key_findings = models.TextField(help_text="Key findings and insights", default="Key findings will be documented here.")
+    recommendations = models.TextField(help_text="Recommendations based on data", default="Recommendations will be provided here.")
     
     # Data visualization
     chart_data = models.JSONField(null=True, blank=True, help_text="Chart configuration and data")
@@ -205,6 +205,9 @@ class Report(models.Model):
     is_exported = models.BooleanField(default=False)
     export_format = models.CharField(max_length=10, choices=[('pdf', 'PDF'), ('excel', 'Excel'), ('csv', 'CSV')], blank=True)
     export_file = models.FileField(upload_to='reports/', blank=True, null=True)
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
     
     class Meta:
         ordering = ['-generated_at']

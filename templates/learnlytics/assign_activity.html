@@ -1,0 +1,197 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assign Activity - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-tasks me-2"></i>Assign Activity
+            </h1>
+            <a href="{% url 'learnlytics:activity_list' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left me-1"></i>Back to Activities
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-user-plus me-2"></i>Assignment Form
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="mb-4">
+                        <label for="activity_id" class="form-label">Select Activity *</label>
+                        <select class="form-select" id="activity_id" name="activity_id" required>
+                            <option value="">Choose an activity to assign</option>
+                            {% for activity in activities %}
+                            <option value="{{ activity.id }}" {% if selected_activity_id == activity.id %}selected{% endif %}>
+                                {{ activity.title }} ({{ activity.get_activity_type_display }} - Level {{ activity.difficulty_level }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label class="form-label">Select Children *</label>
+                        <div class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                            {% if children %}
+                                {% for child in children %}
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" name="children" value="{{ child.id }}" id="child_{{ child.id }}">
+                                    <label class="form-check-label" for="child_{{ child.id }}">
+                                        <strong>{{ child.first_name }} {{ child.last_name }}</strong>
+                                        <small class="text-muted">({{ child.age_in_months }} months)</small>
+                                        {% if child.teacher %}
+                                        <br><small class="text-info">Teacher: {{ child.teacher.get_full_name|default:child.teacher.username }}</small>
+                                        {% endif %}
+                                    </label>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                            <div class="text-center text-muted py-3">
+                                <i class="fas fa-child fa-2x mb-2"></i>
+                                <p>No children available for assignment</p>
+                                <a href="{% url 'earlycare:child_new' %}" class="btn btn-sm btn-primary">Add Children First</a>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <label for="due_date" class="form-label">Due Date (Optional)</label>
+                        <input type="date" class="form-control" id="due_date" name="due_date">
+                        <div class="form-text">Leave blank for no specific due date</div>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'learnlytics:activity_list' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary" {% if not children %}disabled{% endif %}>
+                            <i class="fas fa-paper-plane me-1"></i>Assign Activity
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <!-- Activity Preview -->
+        <div class="card">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-eye me-2"></i>Activity Preview
+                </h6>
+            </div>
+            <div class="card-body">
+                <div id="activity-preview">
+                    <div class="text-center text-muted py-4">
+                        <i class="fas fa-info-circle fa-2x mb-2"></i>
+                        <p>Select an activity to see details</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Assignment Tips -->
+        <div class="card mt-3">
+            <div class="card-header">
+                <h6 class="card-title mb-0">
+                    <i class="fas fa-lightbulb me-2"></i>Assignment Tips
+                </h6>
+            </div>
+            <div class="card-body">
+                <ul class="small mb-0">
+                    <li>Consider each child's current skill level</li>
+                    <li>Check age appropriateness</li>
+                    <li>Set realistic due dates</li>
+                    <li>Provide clear instructions</li>
+                    <li>Monitor progress regularly</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const activitySelect = document.getElementById('activity_id');
+    const previewDiv = document.getElementById('activity-preview');
+    
+    // Activity data for preview (in a real app, this would come from AJAX)
+    const activities = {
+        {% for activity in activities %}
+        {{ activity.id }}: {
+            title: "{{ activity.title }}",
+            description: "{{ activity.description }}",
+            type: "{{ activity.get_activity_type_display }}",
+            difficulty: {{ activity.difficulty_level }},
+            duration: {{ activity.estimated_duration }},
+            ageMin: {{ activity.age_range_min }},
+            ageMax: {{ activity.age_range_max }},
+            materials: "{{ activity.materials_needed }}",
+            objectives: "{{ activity.learning_objectives }}"
+        }{% if not forloop.last %},{% endif %}
+        {% endfor %}
+    };
+    
+    activitySelect.addEventListener('change', function() {
+        const activityId = this.value;
+        if (activityId && activities[activityId]) {
+            const activity = activities[activityId];
+            previewDiv.innerHTML = `
+                <h6>${activity.title}</h6>
+                <p class="small text-muted">${activity.description}</p>
+                <div class="row small">
+                    <div class="col-6">
+                        <strong>Type:</strong><br>
+                        ${activity.type}
+                    </div>
+                    <div class="col-6">
+                        <strong>Difficulty:</strong><br>
+                        Level ${activity.difficulty}
+                    </div>
+                </div>
+                <div class="row small mt-2">
+                    <div class="col-6">
+                        <strong>Duration:</strong><br>
+                        ${activity.duration} min
+                    </div>
+                    <div class="col-6">
+                        <strong>Age Range:</strong><br>
+                        ${activity.ageMin}-${activity.ageMax} months
+                    </div>
+                </div>
+                ${activity.materials ? `<div class="mt-2"><strong>Materials:</strong><br><small>${activity.materials}</small></div>` : ''}
+                ${activity.objectives ? `<div class="mt-2"><strong>Objectives:</strong><br><small>${activity.objectives}</small></div>` : ''}
+            `;
+        } else {
+            previewDiv.innerHTML = `
+                <div class="text-center text-muted py-4">
+                    <i class="fas fa-info-circle fa-2x mb-2"></i>
+                    <p>Select an activity to see details</p>
+                </div>
+            `;
+        }
+    });
+    
+    // Trigger change event if an activity is pre-selected
+    if (activitySelect.value) {
+        activitySelect.dispatchEvent(new Event('change'));
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,166 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}New Assessment - ECSES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Create New Assessment
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="child" class="form-label">Child *</label>
+                            <select class="form-select" id="child" name="child" required>
+                                <option value="">Select Child</option>
+                                {% for child in children %}
+                                <option value="{{ child.id }}">{{ child.first_name }} {{ child.last_name }} ({{ child.age_in_months }} months)</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="assessment_type" class="form-label">Assessment Type *</label>
+                            <select class="form-select" id="assessment_type" name="assessment_type" required>
+                                <option value="">Select Type</option>
+                                <option value="developmental">Developmental Assessment</option>
+                                <option value="behavioral">Behavioral Assessment</option>
+                                <option value="academic">Academic Assessment</option>
+                                <option value="social">Social Skills Assessment</option>
+                                <option value="motor">Motor Skills Assessment</option>
+                                <option value="language">Language Assessment</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="assessment_date" class="form-label">Assessment Date *</label>
+                            <input type="date" class="form-control" id="assessment_date" name="assessment_date" required>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <h5 class="mb-3">Assessment Scores</h5>
+                    <div class="row">
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <label for="motor_score" class="form-label">Motor Skills</label>
+                            <select class="form-select" id="motor_score" name="motor_score">
+                                <option value="">Not Assessed</option>
+                                <option value="1">1 - Needs Significant Support</option>
+                                <option value="2">2 - Needs Some Support</option>
+                                <option value="3">3 - Developing Appropriately</option>
+                                <option value="4">4 - Above Average</option>
+                                <option value="5">5 - Exceptional</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <label for="cognitive_score" class="form-label">Cognitive Skills</label>
+                            <select class="form-select" id="cognitive_score" name="cognitive_score">
+                                <option value="">Not Assessed</option>
+                                <option value="1">1 - Needs Significant Support</option>
+                                <option value="2">2 - Needs Some Support</option>
+                                <option value="3">3 - Developing Appropriately</option>
+                                <option value="4">4 - Above Average</option>
+                                <option value="5">5 - Exceptional</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <label for="language_score" class="form-label">Language Skills</label>
+                            <select class="form-select" id="language_score" name="language_score">
+                                <option value="">Not Assessed</option>
+                                <option value="1">1 - Needs Significant Support</option>
+                                <option value="2">2 - Needs Some Support</option>
+                                <option value="3">3 - Developing Appropriately</option>
+                                <option value="4">4 - Above Average</option>
+                                <option value="5">5 - Exceptional</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <label for="social_score" class="form-label">Social Skills</label>
+                            <select class="form-select" id="social_score" name="social_score">
+                                <option value="">Not Assessed</option>
+                                <option value="1">1 - Needs Significant Support</option>
+                                <option value="2">2 - Needs Some Support</option>
+                                <option value="3">3 - Developing Appropriately</option>
+                                <option value="4">4 - Above Average</option>
+                                <option value="5">5 - Exceptional</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 col-lg-4 mb-3">
+                            <label for="adaptive_score" class="form-label">Adaptive Skills</label>
+                            <select class="form-select" id="adaptive_score" name="adaptive_score">
+                                <option value="">Not Assessed</option>
+                                <option value="1">1 - Needs Significant Support</option>
+                                <option value="2">2 - Needs Some Support</option>
+                                <option value="3">3 - Developing Appropriately</option>
+                                <option value="4">4 - Above Average</option>
+                                <option value="5">5 - Exceptional</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <hr>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Assessment Notes</label>
+                        <textarea class="form-control" id="notes" name="notes" rows="4" placeholder="Detailed observations and notes from the assessment..."></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="recommendations" class="form-label">Recommendations</label>
+                        <textarea class="form-control" id="recommendations" name="recommendations" rows="4" placeholder="Recommendations for next steps, interventions, or follow-up..."></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'earlycare:assessments' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Save Assessment
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Assessment Guidelines -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6><i class="fas fa-info-circle me-2"></i>Assessment Guidelines</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Scoring Scale:</h6>
+                        <ul class="small">
+                            <li><strong>1:</strong> Needs Significant Support</li>
+                            <li><strong>2:</strong> Needs Some Support</li>
+                            <li><strong>3:</strong> Developing Appropriately</li>
+                            <li><strong>4:</strong> Above Average</li>
+                            <li><strong>5:</strong> Exceptional</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Best Practices:</h6>
+                        <ul class="small">
+                            <li>Assess in natural settings</li>
+                            <li>Use multiple assessment methods</li>
+                            <li>Document specific behaviors</li>
+                            <li>Include family input</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

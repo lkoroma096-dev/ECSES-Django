@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth.models import User
 from django.core.validators import MinValueValidator, MaxValueValidator
+from django.utils import timezone
 
 class Child(models.Model):
     """Child profile for early care and development tracking"""
@@ -123,8 +124,8 @@ class SupportPlan(models.Model):
     status = models.CharField(max_length=20, choices=PLAN_STATUS, default='draft')
     
     # Plan details
-    goals = models.TextField(help_text="Specific goals for the child")
-    strategies = models.TextField(help_text="Strategies to achieve goals")
+    goals = models.TextField(help_text="Specific goals for the child", default="Goals will be defined here.")
+    strategies = models.TextField(help_text="Strategies to achieve goals", default="Strategies will be outlined here.")
     resources_needed = models.TextField(blank=True, help_text="Resources and materials needed")
     timeline = models.CharField(max_length=200, blank=True, help_text="Expected timeline")
     
@@ -154,20 +155,23 @@ class ProgressReport(models.Model):
     ]
     
     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='progress_reports')
+    title = models.CharField(max_length=200, default='Progress Report')
     report_type = models.CharField(max_length=20, choices=REPORT_TYPES)
     report_date = models.DateField()
     created_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='created_reports')
     
     # Progress metrics
+    summary = models.TextField(help_text="Executive summary of progress", default="Progress report summary will be added here.")
+    detailed_report = models.TextField(blank=True, help_text="Detailed progress report")
     academic_progress = models.TextField(blank=True)
     social_progress = models.TextField(blank=True)
     behavioral_progress = models.TextField(blank=True)
     physical_progress = models.TextField(blank=True)
     
     # Overall assessment
-    strengths = models.TextField(help_text="Child's strengths and achievements")
-    areas_for_improvement = models.TextField(help_text="Areas needing attention")
-    recommendations = models.TextField(help_text="Recommendations for continued support")
+    strengths = models.TextField(help_text="Child's strengths and achievements", default="Strengths will be documented here.")
+    areas_for_improvement = models.TextField(help_text="Areas needing attention", default="Areas for improvement will be noted here.")
+    recommendations = models.TextField(help_text="Recommendations for continued support", default="Recommendations will be provided here.")
     
     # Additional notes
     teacher_notes = models.TextField(blank=True)

@@ -1,0 +1,263 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Badges - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h1>
+                <i class="fas fa-medal me-2"></i>Badges
+            </h1>
+            {% if user.userprofile.role == 'teacher' or user.is_superuser %}
+            <a href="#" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBadgeModal">
+                <i class="fas fa-plus me-2"></i>Create Badge
+            </a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Badge Categories -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-trophy me-2"></i>All Badges
+                </h5>
+            </div>
+            <div class="card-body">
+                {% if badges %}
+                <div class="row">
+                    {% for badge in badges %}
+                    <div class="col-md-6 col-lg-4 mb-4">
+                        <div class="card h-100 {% if badge in user_badges %}border-success{% endif %}">
+                            <div class="card-body text-center">
+                                <div class="badge-icon mb-3" style="color: {{ badge.color }}; font-size: 3rem;">
+                                    <i class="fas fa-{{ badge.icon }}"></i>
+                                </div>
+                                <h5 class="card-title">{{ badge.name }}</h5>
+                                <p class="card-text">{{ badge.description }}</p>
+                                
+                                {% if badge in user_badges %}
+                                <div class="alert alert-success py-2 mb-3">
+                                    <i class="fas fa-check-circle me-1"></i>
+                                    <small><strong>Earned!</strong></small>
+                                </div>
+                                {% else %}
+                                <div class="alert alert-light py-2 mb-3">
+                                    <i class="fas fa-lock me-1"></i>
+                                    <small class="text-muted">Not earned yet</small>
+                                </div>
+                                {% endif %}
+                                
+                                <div class="small text-muted">
+                                    <strong>Criteria:</strong><br>
+                                    {{ badge.criteria }}
+                                </div>
+                                
+                                {% if user.userprofile.role == 'teacher' or user.is_superuser %}
+                                <div class="mt-3">
+                                    <button class="btn btn-sm btn-outline-primary" onclick="editBadge({{ badge.id }})">
+                                        <i class="fas fa-edit"></i>
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-danger" onclick="deleteBadge({{ badge.id }})">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-medal fa-4x mb-3"></i>
+                    <h3>No Badges Available</h3>
+                    <p>Create the first badge to start rewarding children for their achievements!</p>
+                    {% if user.userprofile.role == 'teacher' or user.is_superuser %}
+                    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createBadgeModal">
+                        <i class="fas fa-plus me-2"></i>Create First Badge
+                    </button>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- My Earned Badges (for children) -->
+{% if user_badges %}
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-star me-2"></i>My Earned Badges
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for child_badge in user_badges %}
+                    <div class="col-md-6 col-lg-4 mb-3">
+                        <div class="card border-success">
+                            <div class="card-body text-center">
+                                <div class="badge-icon mb-2" style="color: {{ child_badge.badge.color }}; font-size: 2.5rem;">
+                                    <i class="fas fa-{{ child_badge.badge.icon }}"></i>
+                                </div>
+                                <h6 class="card-title">{{ child_badge.badge.name }}</h6>
+                                <p class="small text-muted mb-2">{{ child_badge.badge.description }}</p>
+                                <div class="alert alert-success py-1 mb-0">
+                                    <i class="fas fa-calendar me-1"></i>
+                                    <small>Earned on {{ child_badge.earned_date|date:"M d, Y" }}</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Create Badge Modal -->
+{% if user.userprofile.role == 'teacher' or user.is_superuser %}
+<div class="modal fade" id="createBadgeModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Create New Badge</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <form id="badgeForm" method="post">
+                {% csrf_token %}
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="badge_name" class="form-label">Badge Name *</label>
+                            <input type="text" class="form-control" id="badge_name" name="name" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="badge_icon" class="form-label">Icon *</label>
+                            <select class="form-select" id="badge_icon" name="icon" required>
+                                <option value="">Select Icon</option>
+                                <option value="star">Star</option>
+                                <option value="trophy">Trophy</option>
+                                <option value="medal">Medal</option>
+                                <option value="crown">Crown</option>
+                                <option value="heart">Heart</option>
+                                <option value="fire">Fire</option>
+                                <option value="gem">Gem</option>
+                                <option value="book">Book</option>
+                                <option value="calculator">Calculator</option>
+                                <option value="palette">Palette</option>
+                                <option value="running">Running</option>
+                                <option value="music">Music</option>
+                                <option value="camera">Camera</option>
+                                <option value="puzzle-piece">Puzzle</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="badge_color" class="form-label">Color *</label>
+                            <input type="color" class="form-control form-control-color" id="badge_color" name="color" value="#ffc107" required>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="badge_category" class="form-label">Category</label>
+                            <select class="form-select" id="badge_category" name="category">
+                                <option value="achievement">Achievement</option>
+                                <option value="participation">Participation</option>
+                                <option value="improvement">Improvement</option>
+                                <option value="milestone">Milestone</option>
+                                <option value="special">Special</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="badge_description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="badge_description" name="description" rows="3" required></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="badge_criteria" class="form-label">Earning Criteria *</label>
+                        <textarea class="form-control" id="badge_criteria" name="criteria" rows="3" required placeholder="Describe what children need to do to earn this badge"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="badge_points" class="form-label">Points Value</label>
+                        <input type="number" class="form-control" id="badge_points" name="points_value" min="1" max="100" value="10">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create Badge</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<style>
+.badge-icon {
+    transition: transform 0.2s;
+}
+
+.badge-icon:hover {
+    transform: scale(1.1);
+}
+
+.card.border-success {
+    background: linear-gradient(135deg, #f8fff8 0%, #e8f5e8 100%);
+}
+</style>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function editBadge(badgeId) {
+    // Implementation for editing badges
+    alert('Edit badge functionality would be implemented here');
+}
+
+function deleteBadge(badgeId) {
+    if (confirm('Are you sure you want to delete this badge?')) {
+        // Implementation for deleting badges
+        alert('Delete badge functionality would be implemented here');
+    }
+}
+
+// Preview badge icon and color
+document.addEventListener('DOMContentLoaded', function() {
+    const iconSelect = document.getElementById('badge_icon');
+    const colorInput = document.getElementById('badge_color');
+    const previewDiv = document.createElement('div');
+    previewDiv.className = 'text-center mb-3';
+    previewDiv.innerHTML = '<div id="badge-preview" style="font-size: 3rem;"><i class="fas fa-star" style="color: #ffc107;"></i></div>';
+    
+    if (iconSelect && colorInput) {
+        iconSelect.parentNode.parentNode.appendChild(previewDiv);
+        
+        function updatePreview() {
+            const icon = iconSelect.value || 'star';
+            const color = colorInput.value || '#ffc107';
+            document.getElementById('badge-preview').innerHTML = `<i class="fas fa-${icon}" style="color: ${color};"></i>`;
+        }
+        
+        iconSelect.addEventListener('change', updatePreview);
+        colorInput.addEventListener('change', updatePreview);
+    }
+});
+</script>
+{% endblock %}

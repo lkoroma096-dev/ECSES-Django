@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Create Activity - ECSES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card">
+            <div class="card-header">
+                <h4 class="card-title mb-0">
+                    <i class="fas fa-plus-circle me-2"></i>Create New Activity
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+                    
+                    <div class="row">
+                        <div class="col-md-8 mb-3">
+                            <label for="title" class="form-label">Activity Title *</label>
+                            <input type="text" class="form-control" id="title" name="title" required placeholder="Enter activity title">
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <label for="activity_type" class="form-label">Activity Type *</label>
+                            <select class="form-select" id="activity_type" name="activity_type" required>
+                                <option value="">Select Type</option>
+                                <option value="reading">Reading</option>
+                                <option value="math">Math</option>
+                                <option value="art">Art & Creativity</option>
+                                <option value="science">Science</option>
+                                <option value="physical">Physical Activity</option>
+                                <option value="social">Social Skills</option>
+                                <option value="music">Music</option>
+                                <option value="cooking">Cooking</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Description *</label>
+                        <textarea class="form-control" id="description" name="description" rows="3" required placeholder="Brief description of the activity"></textarea>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="difficulty_level" class="form-label">Difficulty Level *</label>
+                            <select class="form-select" id="difficulty_level" name="difficulty_level" required>
+                                <option value="">Select Difficulty</option>
+                                <option value="1">1 - Beginner</option>
+                                <option value="2">2 - Easy</option>
+                                <option value="3">3 - Intermediate</option>
+                                <option value="4">4 - Advanced</option>
+                                <option value="5">5 - Expert</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="estimated_duration" class="form-label">Estimated Duration (minutes)</label>
+                            <input type="number" class="form-control" id="estimated_duration" name="estimated_duration" min="5" max="120" value="30" placeholder="30">
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="age_range_min" class="form-label">Minimum Age (months)</label>
+                            <input type="number" class="form-control" id="age_range_min" name="age_range_min" min="0" max="60" value="0" placeholder="0">
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="age_range_max" class="form-label">Maximum Age (months)</label>
+                            <input type="number" class="form-control" id="age_range_max" name="age_range_max" min="0" max="60" value="60" placeholder="60">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="instructions" class="form-label">Instructions *</label>
+                        <textarea class="form-control" id="instructions" name="instructions" rows="6" required placeholder="Step-by-step instructions for the activity"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="materials_needed" class="form-label">Materials Needed</label>
+                        <textarea class="form-control" id="materials_needed" name="materials_needed" rows="3" placeholder="List all materials and supplies needed"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="learning_objectives" class="form-label">Learning Objectives</label>
+                        <textarea class="form-control" id="learning_objectives" name="learning_objectives" rows="3" placeholder="What will children learn from this activity?"></textarea>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="skills_developed" class="form-label">Skills Developed</label>
+                        <textarea class="form-control" id="skills_developed" name="skills_developed" rows="3" placeholder="What skills will this activity help develop?"></textarea>
+                    </div>
+                    
+                    <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                        <a href="{% url 'learnlytics:activity_list' %}" class="btn btn-secondary me-md-2">
+                            <i class="fas fa-times me-1"></i>Cancel
+                        </a>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-save me-1"></i>Create Activity
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Creation Guidelines -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card bg-light">
+            <div class="card-body">
+                <h6><i class="fas fa-lightbulb me-2"></i>Activity Creation Guidelines</h6>
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Make it Engaging:</h6>
+                        <ul class="small">
+                            <li>Use age-appropriate language</li>
+                            <li>Include hands-on elements</li>
+                            <li>Make it fun and interactive</li>
+                            <li>Consider different learning styles</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Clear Instructions:</h6>
+                        <ul class="small">
+                            <li>Write step-by-step directions</li>
+                            <li>Include safety considerations</li>
+                            <li>Specify adult supervision needs</li>
+                            <li>Provide alternative approaches</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
