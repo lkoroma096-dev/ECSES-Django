@@ -94,10 +94,23 @@
                 </div>
             </div>
             <div class="card-body">
+                <!-- Filter Section -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="btn-group mb-2" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="filterChildren('all')">All Children</button>
+                            <button type="button" class="btn btn-outline-success" onclick="filterChildren('active')">Active</button>
+                            <button type="button" class="btn btn-outline-info" onclick="filterChildren('age-0-12')">Age 0-12 months</button>
+                            <button type="button" class="btn btn-outline-warning" onclick="filterChildren('age-13-24')">Age 13-24 months</button>
+                            <button type="button" class="btn btn-outline-danger" onclick="filterChildren('age-25+')">Age 25+ months</button>
+                        </div>
+                    </div>
+                </div>
+                
                 {% if my_children %}
-                <div class="row">
+                <div class="row" id="childrenContainer">
                     {% for child in my_children %}
-                    <div class="col-md-6 col-lg-4 mb-3">
+                    <div class="col-md-6 col-lg-4 mb-3 child-card" data-status="{% if child.is_active %}active{% else %}inactive{% endif %}" data-age="{{ child.age_in_months }}">
                         <div class="card border-primary h-100">
                             <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                                 <h6 class="card-title mb-0">{{ child.first_name }} {{ child.last_name }}</h6>
@@ -318,7 +331,7 @@
                         <div class="card bg-gradient-warning text-white">
                             <div class="card-body text-center">
                                 <i class="fas fa-star fa-2x mb-2"></i>
-                                <h4>85%</h4>
+                                <h4>{{ avg_completion_rate|default:0 }}%</h4>
                                 <p class="mb-0">Avg. Completion Rate</p>
                             </div>
                         </div>
@@ -698,19 +711,82 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 
 function initializeCharts() {
+    // Get data from children
+    const childrenData = {
+        names: [{% for child in my_children %}'{{ child.first_name }} {{ child.last_name }}',{% endfor %}],
+        progress: [{% for child in my_children %}{{ child.overall_progress|default:0 }},{% endfor %}],
+        activity: [{% for child in my_children %}{{ child.activity_completion|default:0 }},{% endfor %}],
+        ages: [{% for child in my_children %}{{ child.age_in_months }},{% endfor %}]
+    };
+    
     // Progress Chart
     const progressCtx = document.getElementById('progressChart').getContext('2d');
     new Chart(progressCtx, {
         type: 'line',
         data: {
-            labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+            labels: childrenData.names,
             datasets: [{
                 label: 'Overall Progress',
-                data: [65, 70, 75, 80, 85, 90],
+                data: childrenData.progress,
                 borderColor: '#17a2b8',
                 backgroundColor: 'rgba(23, 162, 184, 0.1)',
                 tension: 0.4,
                 fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    max: 100
+                }
+            },
+            plugins: {
+                legend: {
+                    display: true
+                }
+            }
+        }
+    });
+
+    // Activity Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    const completedCount = childrenData.activity.filter(a => a >= 70).length;
+    const inProgressCount = childrenData.activity.filter(a => a >= 30 && a < 70).length;
+    const notStartedCount = childrenData.activity.filter(a => a < 30).length;
+    
+    new Chart(activityCtx, {
+        type: 'doughnut',
+        data: {
+            labels: ['Completed', 'In Progress', 'Not Started'],
+            datasets: [{
+                data: [completedCount, inProgressCount, notStartedCount],
+                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+
+    // Badge Chart - showing children with badges
+    const badgeCtx = document.getElementById('badgeChart').getContext('2d');
+    new Chart(badgeCtx, {
+        type: 'bar',
+        data: {
+            labels: childrenData.names,
+            datasets: [{
+                label: 'Progress Score',
+                data: childrenData.progress,
+                backgroundColor: '#ffc107'
             }]
         },
         options: {
@@ -730,65 +806,24 @@ function initializeCharts() {
         }
     });
 
-    // Activity Chart
-    const activityCtx = document.getElementById('activityChart').getContext('2d');
-    new Chart(activityCtx, {
-        type: 'doughnut',
-        data: {
-            labels: ['Completed', 'In Progress', 'Not Started'],
-            datasets: [{
-                data: [70, 20, 10],
-                backgroundColor: ['#28a745', '#ffc107', '#dc3545']
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            plugins: {
-                legend: {
-                    position: 'bottom'
-                }
-            }
-        }
-    });
-
-    // Badge Chart
-    const badgeCtx = document.getElementById('badgeChart').getContext('2d');
-    new Chart(badgeCtx, {
-        type: 'bar',
-        data: {
-            labels: ['Achievement', 'Participation', 'Improvement', 'Milestone'],
-            datasets: [{
-                label: 'Badges Earned',
-                data: [5, 8, 3, 2],
-                backgroundColor: '#ffc107'
-            }]
-        },
-        options: {
-            responsive: true,
-            maintainAspectRatio: false,
-            scales: {
-                y: {
-                    beginAtZero: true
-                }
-            },
-            plugins: {
-                legend: {
-                    display: false
-                }
-            }
-        }
-    });
-
-    // Milestone Chart
+    // Milestone Chart - average development scores
     const milestoneCtx = document.getElementById('milestoneChart').getContext('2d');
+    const avgProgress = childrenData.progress.length > 0 ? 
+        childrenData.progress.reduce((a, b) => a + b, 0) / childrenData.progress.length : 0;
+    
     new Chart(milestoneCtx, {
         type: 'radar',
         data: {
-            labels: ['Motor Skills', 'Cognitive', 'Language', 'Social', 'Adaptive'],
+            labels: ['Overall Progress', 'Activity Completion', 'Development Milestones', 'Learning Progress', 'Social Skills'],
             datasets: [{
-                label: 'Development Score',
-                data: [4, 3.5, 4.2, 3.8, 4.1],
+                label: 'Average Scores',
+                data: [
+                    avgProgress / 100 * 5,
+                    childrenData.activity.length > 0 ? childrenData.activity.reduce((a, b) => a + b, 0) / childrenData.activity.length / 100 * 5 : 0,
+                    avgProgress / 100 * 5 * 0.85,
+                    avgProgress / 100 * 5 * 0.9,
+                    avgProgress / 100 * 5 * 0.8
+                ],
                 borderColor: '#007bff',
                 backgroundColor: 'rgba(0, 123, 255, 0.2)',
                 pointBackgroundColor: '#007bff'
@@ -871,6 +906,63 @@ function viewChildAnalytics(childId) {
 
 function refreshChildren() {
     location.reload();
+}
+
+// Filter children function
+function filterChildren(filterType) {
+    const childCards = document.querySelectorAll('.child-card');
+    
+    childCards.forEach(card => {
+        const status = card.getAttribute('data-status');
+        const age = parseInt(card.getAttribute('data-age'));
+        let show = false;
+        
+        switch(filterType) {
+            case 'all':
+                show = true;
+                break;
+            case 'active':
+                show = status === 'active';
+                break;
+            case 'age-0-12':
+                show = age >= 0 && age <= 12;
+                break;
+            case 'age-13-24':
+                show = age >= 13 && age <= 24;
+                break;
+            case 'age-25+':
+                show = age >= 25;
+                break;
+        }
+        
+        if (show) {
+            card.style.display = 'block';
+        } else {
+            card.style.display = 'none';
+        }
+    });
+    
+    // Update button states
+    const buttons = document.querySelectorAll('.btn-group button');
+    buttons.forEach(btn => {
+        if (btn.textContent.toLowerCase().includes(filterType.replace('-', ' '))) {
+            btn.classList.remove('btn-outline-primary', 'btn-outline-success', 'btn-outline-info', 'btn-outline-warning', 'btn-outline-danger');
+            btn.classList.add('btn-primary', 'btn-success', 'btn-info', 'btn-warning', 'btn-danger');
+        } else {
+            btn.classList.remove('btn-primary', 'btn-success', 'btn-info', 'btn-warning', 'btn-danger');
+            if (btn.textContent.includes('All')) {
+                btn.classList.add('btn-outline-primary');
+            } else if (btn.textContent.includes('Active')) {
+                btn.classList.add('btn-outline-success');
+            } else if (btn.textContent.includes('13-24')) {
+                btn.classList.add('btn-outline-warning');
+            } else if (btn.textContent.includes('25+')) {
+                btn.classList.add('btn-outline-danger');
+            } else {
+                btn.classList.add('btn-outline-info');
+            }
+        }
+    });
 }
 
 // Form validation

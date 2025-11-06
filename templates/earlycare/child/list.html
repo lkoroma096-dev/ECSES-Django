@@ -95,7 +95,7 @@
                 <div class="mb-3">
                     <h6>Latest Assessment</h6>
                     <div class="progress" style="height: 8px;">
-                        <div class="progress-bar bg-success" style="width: {{ child.latest_assessment.overall_score|floatformat:0|add:0|mul:20 }}%"></div>
+                        <div class="progress-bar bg-success" style="width: {% widthratio child.latest_assessment.overall_score 5 100 %}%"></div>
                     </div>
                     <small class="text-muted">{{ child.latest_assessment.overall_score|floatformat:1 }}/5.0</small>
                 </div>

@@ -1,0 +1,29 @@
+{% extends 'base.html' %}
+
+{% block title %}Notification - ECSES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header d-flex justify-content-between align-items-center">
+        <strong>{{ notification.title }}</strong>
+        <span class="badge bg-{{ notification.notification_type }} text-uppercase">{{ notification.get_notification_type_display }}</span>
+      </div>
+      <div class="card-body">
+        <p style="white-space: pre-wrap;">{{ notification.message }}</p>
+        <div class="small text-muted">Created: {{ notification.created_at }}</div>
+        {% if notification.expires_at %}<div class="small text-muted">Expires: {{ notification.expires_at }}</div>{% endif %}
+      </div>
+      <div class="card-footer d-flex gap-2">
+        <a href="{% url 'connecthub:notifications' %}" class="btn btn-secondary btn-sm">Back</a>
+        {% if user.is_superuser or user.userprofile.role == 'admin' %}
+        <a href="{% url 'connecthub:edit_notification' notification.id %}" class="btn btn-outline-secondary btn-sm">Edit</a>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

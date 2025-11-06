@@ -98,7 +98,7 @@ def inbox(request):
         'messages': messages_page,
         'unread_count': Message.objects.filter(recipient=request.user, is_read=False).count()
     }
-    return render(request, 'connecthub/inbox.html', context)
+    return render(request, 'connecthub/messages/list.html', context)
 
 @login_required
 def notifications(request):
@@ -113,7 +113,46 @@ def notifications(request):
         'notifications': notifications_page,
         'unread_count': Notification.objects.filter(user=request.user, is_read=False).count()
     }
-    return render(request, 'connecthub/notifications.html', context)
+    return render(request, 'connecthub/notifications/list.html', context)
+
+@login_required
+def notification_detail(request, notification_id):
+    """Show a single notification and mark it read for the user"""
+    notification = get_object_or_404(Notification, id=notification_id, user=request.user)
+    if not notification.is_read:
+        notification.is_read = True
+        notification.save()
+    context = {
+        'notification': notification,
+    }
+    return render(request, 'connecthub/notifications/detail.html', context)
+
+@login_required
+def edit_notification(request, notification_id):
+    """Edit a notification (admin only)"""
+    if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
+        messages.error(request, 'Access denied. Admin privileges required.')
+        return redirect('connecthub:notifications')
+
+    notification = get_object_or_404(Notification, id=notification_id)
+
+    if request.method == 'POST':
+        title = request.POST.get('title', '').strip()
+        message_text = request.POST.get('message', '').strip()
+        notification_type = request.POST.get('notification_type', notification.notification_type)
+        if title and message_text:
+            notification.title = title
+            notification.message = message_text
+            notification.notification_type = notification_type
+            notification.save()
+            messages.success(request, 'Notification updated successfully!')
+            return redirect('connecthub:notification_detail', notification.id)
+        messages.error(request, 'Title and message are required.')
+
+    context = {
+        'notification': notification,
+    }
+    return render(request, 'connecthub/notifications/edit.html', context)
 
 @login_required
 def admin_dashboard(request):
@@ -122,11 +161,31 @@ def admin_dashboard(request):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('home')
     
+    # Try to import app models
+    try:
+        from earlycare.models import Child
+        Child = Child
+    except ImportError:
+        Child = None
+    
+    try:
+        from learnlytics.models import Activity
+        Activity = Activity
+    except ImportError:
+        Activity = None
+    
     # Get dashboard statistics
     total_users = User.objects.count()
-    total_children = Child.objects.count() if 'earlycare' in globals() else 0
+    total_children = Child.objects.count() if Child else 0
     total_teachers = UserProfile.objects.filter(role='teacher').count()
-    total_activities = Activity.objects.count() if 'learnlytics' in globals() else 0
+    total_activities = Activity.objects.count() if Activity else 0
+    # Unassigned children
+    unassigned_children = 0
+    if Child:
+        try:
+            unassigned_children = Child.objects.filter(teacher__isnull=True).count()
+        except Exception:
+            unassigned_children = 0
     
     # User counts by role
     teacher_count = UserProfile.objects.filter(role='teacher').count()
@@ -157,6 +216,7 @@ def admin_dashboard(request):
         'recent_notifications': recent_notifications,
         'chart_labels': chart_labels,
         'chart_data': chart_data,
+        'unassigned_children': unassigned_children,
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
 
@@ -167,8 +227,15 @@ def teacher_dashboard(request):
         messages.error(request, 'Access denied. Teacher privileges required.')
         return redirect('home')
     
+    # Try to import Child model
+    try:
+        from earlycare.models import Child
+        Child = Child
+    except ImportError:
+        Child = None
+    
     # Get teacher's assigned children
-    if 'earlycare' in globals():
+    if Child:
         assigned_children = Child.objects.filter(teacher=request.user)
         assigned_children_count = assigned_children.count()
     else:
@@ -191,35 +258,40 @@ def teacher_dashboard(request):
     assessments_due_this_week = 0
     completed_assessments = 0
     
-    if assigned_children_count > 0 and 'earlycare' in globals():
-        from earlycare.models import Assessment
-        from datetime import datetime, timedelta
-        
-        pending_assessments = Assessment.objects.filter(
-            child__in=assigned_children, 
-            status='pending'
-        ).count()
-        
-        week_from_now = datetime.now() + timedelta(days=7)
-        assessments_due_this_week = Assessment.objects.filter(
-            child__in=assigned_children,
-            due_date__lte=week_from_now,
-            status__in=['pending', 'in_progress']
-        ).count()
-        
-        completed_assessments = Assessment.objects.filter(
-            child__in=assigned_children,
-            status='completed'
-        ).count()
+    if assigned_children_count > 0 and Child:
+        try:
+            from earlycare.models import Assessment
+            from datetime import datetime, timedelta
+            
+            # Count all assessments (since there's no status field)
+            total_assessments = Assessment.objects.filter(
+                child__in=assigned_children
+            ).count()
+            
+            pending_assessments = total_assessments
+            completed_assessments = total_assessments
+            
+            # Check for upcoming assessments based on assessment_date
+            week_from_now = datetime.now().date() + timedelta(days=7)
+            assessments_due_this_week = Assessment.objects.filter(
+                child__in=assigned_children,
+                assessment_date__lte=week_from_now,
+                assessment_date__gte=datetime.now().date()
+            ).count()
+        except Exception:
+            pass
     
     # Get activity data
     active_activities = 0
-    if assigned_children_count > 0 and 'learnlytics' in globals():
-        from learnlytics.models import ActivityAssignment
-        active_activities = ActivityAssignment.objects.filter(
-            child__in=assigned_children,
-            status='in_progress'
-        ).count()
+    if assigned_children_count > 0:
+        try:
+            from learnlytics.models import ActivityAssignment
+            active_activities = ActivityAssignment.objects.filter(
+                child__in=assigned_children,
+                status='in_progress'
+            ).count()
+        except Exception:
+            pass
     
     # Progress data (mock calculation based on children)
     progress_labels = ['Week 1', 'Week 2', 'Week 3', 'Week 4']
@@ -256,8 +328,15 @@ def parent_dashboard(request):
         messages.error(request, 'Access denied. Parent privileges required.')
         return redirect('home')
     
+    # Try to import Child model
+    try:
+        from earlycare.models import Child
+        Child = Child
+    except ImportError:
+        Child = None
+    
     # Get parent's children
-    if 'earlycare' in globals():
+    if Child:
         my_children = Child.objects.filter(parent=request.user)
         my_children_count = my_children.count()
     else:
@@ -277,29 +356,40 @@ def parent_dashboard(request):
     
     # Get support plans for parent's children
     support_plans = []
-    if my_children_count > 0:
-        from earlycare.models import SupportPlan
-        support_plans = SupportPlan.objects.filter(child__in=my_children).order_by('-created_at')[:5]
+    if my_children_count > 0 and Child:
+        try:
+            from earlycare.models import SupportPlan
+            support_plans = SupportPlan.objects.filter(child__in=my_children).order_by('-created_at')[:5]
+        except Exception:
+            pass
     
     # Get recent progress reports
     recent_progress_reports = 0
-    if my_children_count > 0:
-        from earlycare.models import ProgressReport
-        recent_progress_reports = ProgressReport.objects.filter(child__in=my_children).count()
+    if my_children_count > 0 and Child:
+        try:
+            from earlycare.models import ProgressReport
+            recent_progress_reports = ProgressReport.objects.filter(child__in=my_children).count()
+        except Exception:
+            pass
     
     # Get total badges earned by children
     total_badges = 0
-    if my_children_count > 0:
-        from learnlytics.models import ChildBadge
-        total_badges = ChildBadge.objects.filter(child__in=my_children).count()
+    if my_children_count > 0 and Child:
+        try:
+            from learnlytics.models import ChildBadge
+            total_badges = ChildBadge.objects.filter(child__in=my_children).count()
+        except Exception:
+            pass
     
     # Add progress data for children
+    total_activity_completion = 0
     for child in my_children:
         # Calculate overall progress (mock calculation)
         child.overall_progress = min(100, (child.age_in_months * 2) + 20)
         
         # Calculate activity completion (mock calculation)
         child.activity_completion = min(100, (child.age_in_months * 3) + 10)
+        total_activity_completion += child.activity_completion
         
         # Get recent badges for this child
         if 'learnlytics' in globals():
@@ -307,6 +397,9 @@ def parent_dashboard(request):
             child.recent_badges = ChildBadge.objects.filter(child=child).order_by('-earned_date')[:3]
         else:
             child.recent_badges = []
+    
+    # Calculate average completion rate
+    avg_completion_rate = total_activity_completion / my_children_count if my_children_count > 0 else 0
     
     context = {
         'my_children': my_children,
@@ -317,6 +410,7 @@ def parent_dashboard(request):
         'recent_messages': recent_messages,
         'recent_notifications': recent_notifications,
         'support_plans': support_plans,
+        'avg_completion_rate': round(avg_completion_rate, 1),
     }
     return render(request, 'dashboards/parent_dashboard.html', context)
 
@@ -327,8 +421,15 @@ def parent_view_children(request):
         messages.error(request, 'Access denied. Parent privileges required.')
         return redirect('home')
     
+    # Try to import Child model
+    try:
+        from earlycare.models import Child
+        Child = Child
+    except ImportError:
+        Child = None
+    
     # Get parent's children
-    if 'earlycare' in globals():
+    if Child:
         my_children = Child.objects.filter(parent=request.user)
         my_children_count = my_children.count()
     else:
@@ -511,7 +612,7 @@ def user_management(request):
         'role_counts': role_counts,
         'role_choices': UserProfile.ROLE_CHOICES,
     }
-    return render(request, 'connecthub/user_management.html', context)
+    return render(request, 'connecthub/users/list.html', context)
 
 @login_required
 def create_user(request):
@@ -563,7 +664,7 @@ def create_user(request):
     context = {
         'role_choices': UserProfile.ROLE_CHOICES,
     }
-    return render(request, 'connecthub/create_user.html', context)
+    return render(request, 'connecthub/users/create.html', context)
 
 @login_required
 def edit_user(request, user_id):
@@ -588,7 +689,7 @@ def edit_user(request, user_id):
         if new_username != user.username:
             if User.objects.filter(username=new_username).exists():
                 messages.error(request, 'Username already exists.')
-                return render(request, 'connecthub/edit_user.html', {
+                return render(request, 'connecthub/users/edit.html', {
                     'user_obj': user,
                     'user_profile': user_profile,
                     'role_choices': UserProfile.ROLE_CHOICES,
@@ -599,7 +700,7 @@ def edit_user(request, user_id):
         if user.email != request.POST.get('email'):
             if User.objects.filter(email=request.POST.get('email')).exists():
                 messages.error(request, 'Email already exists.')
-                return render(request, 'connecthub/edit_user.html', {
+                return render(request, 'connecthub/users/edit.html', {
                     'user_obj': user,
                     'user_profile': user_profile,
                     'role_choices': UserProfile.ROLE_CHOICES,
@@ -618,7 +719,7 @@ def edit_user(request, user_id):
         'user_profile': user_profile,
         'role_choices': UserProfile.ROLE_CHOICES,
     }
-    return render(request, 'connecthub/edit_user.html', context)
+    return render(request, 'connecthub/users/edit.html', context)
 
 @login_required
 def delete_user(request, user_id):
@@ -643,7 +744,7 @@ def delete_user(request, user_id):
     context = {
         'user_obj': user,
     }
-    return render(request, 'connecthub/delete_user.html', context)
+    return render(request, 'connecthub/users/delete.html', context)
 
 @login_required
 def profile(request):
@@ -676,7 +777,7 @@ def profile(request):
     context = {
         'user_profile': user_profile,
     }
-    return render(request, 'connecthub/profile.html', context)
+    return render(request, 'connecthub/users/profile.html', context)
 
 @login_required
 def settings(request):
@@ -751,7 +852,7 @@ def compose_message(request):
     context = {
         'users': users,
     }
-    return render(request, 'connecthub/compose_message.html', context)
+    return render(request, 'connecthub/messages/compose.html', context)
 
 @login_required
 def message_detail(request, message_id):
@@ -793,6 +894,32 @@ def reply_message(request, message_id):
         'original_message': original_message,
     }
     return render(request, 'connecthub/reply_message.html', context)
+
+@login_required
+def edit_message(request, message_id):
+    """Edit a message authored by the current user"""
+    message = get_object_or_404(Message, id=message_id)
+    
+    # Only the original sender can edit
+    if message.sender != request.user:
+        messages.error(request, 'You do not have permission to edit this message.')
+        return redirect('connecthub:inbox')
+
+    if request.method == 'POST':
+        subject = request.POST.get('subject', '').strip()
+        content = request.POST.get('content', '').strip()
+        if subject and content:
+            message.subject = subject
+            message.content = content
+            message.save()
+            messages.success(request, 'Message updated successfully!')
+            return redirect('connecthub:message_detail', message.id)
+        messages.error(request, 'Both subject and content are required.')
+
+    context = {
+        'message': message,
+    }
+    return render(request, 'connecthub/messages/edit.html', context)
 
 @login_required
 def send_notification(request):
@@ -843,7 +970,7 @@ def send_notification(request):
     context = {
         'users': users,
     }
-    return render(request, 'connecthub/send_notification.html', context)
+    return render(request, 'connecthub/notifications/send.html', context)
 
 @login_required
 def mark_notification_read(request, notification_id):

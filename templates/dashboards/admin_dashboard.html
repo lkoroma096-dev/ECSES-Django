@@ -76,6 +76,26 @@
     </div>
 </div>
 
+<!-- Assignment Health -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card border-warning">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="card-title">{{ unassigned_children }}</h4>
+                        <p class="card-text mb-0">Unassigned Children</p>
+                    </div>
+                    <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                </div>
+                <div class="d-grid mt-3">
+                    <a href="{% url 'earlycare:child_assignments' %}?unassigned=1" class="btn btn-outline-warning">Assign Now</a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
 <!-- Main Content Row -->
 <div class="row">
     <!-- User Management Panel -->
@@ -108,6 +128,9 @@
                     </a>
                     <a href="{% url 'connecthub:create_user' %}" class="btn btn-outline-primary">
                         <i class="fas fa-user-plus me-2"></i>Add New User
+                    </a>
+                    <a href="{% url 'earlycare:child_assignments' %}" class="btn btn-outline-secondary">
+                        <i class="fas fa-user-check me-2"></i>Assign Children to Teachers
                     </a>
                 </div>
             </div>

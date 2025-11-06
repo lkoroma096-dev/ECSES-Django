@@ -1,0 +1,120 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Reports Overview - ECSES{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <h1>
+            <i class="fas fa-chart-line me-2"></i>Reports Overview
+        </h1>
+    </div>
+</div>
+
+<!-- Statistics Cards -->
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-child fa-2x mb-2"></i>
+                <h3>{{ total_children }}</h3>
+                <p class="mb-0">Total Children</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-success text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-clipboard-check fa-2x mb-2"></i>
+                <h3>{{ total_assessments }}</h3>
+                <p class="mb-0">Total Assessments</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-info text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-clipboard-list fa-2x mb-2"></i>
+                <h3>{{ total_support_plans }}</h3>
+                <p class="mb-0">Support Plans</p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body text-center">
+                <i class="fas fa-file-alt fa-2x mb-2"></i>
+                <h3>{{ total_reports }}</h3>
+                <p class="mb-0">Progress Reports</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Reports Section -->
+<div class="row">
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-check me-2"></i>Assessment Reports
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">View and analyze developmental assessments for all children.</p>
+                <a href="{% url 'earlycare:assessments' %}" class="btn btn-primary">
+                    <i class="fas fa-eye me-2"></i>View All Assessments
+                </a>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6 mb-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-clipboard-list me-2"></i>Support Plans
+                </h5>
+            </div>
+            <div class="card-body">
+                <p class="card-text">Review and manage individualized support plans.</p>
+                <a href="{% url 'earlycare:support_plans' %}" class="btn btn-info">
+                    <i class="fas fa-eye me-2"></i>View All Support Plans
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Quick Links -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5 class="card-title mb-0">
+                    <i class="fas fa-link me-2"></i>Quick Actions
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'earlycare:assessment_new' %}" class="btn btn-success w-100">
+                            <i class="fas fa-plus me-2"></i>Create Assessment
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'earlycare:child_new' %}" class="btn btn-primary w-100">
+                            <i class="fas fa-user-plus me-2"></i>Add Child
+                        </a>
+                    </div>
+                    <div class="col-md-4 mb-2">
+                        <a href="{% url 'earlycare:child_list' %}" class="btn btn-info w-100">
+                            <i class="fas fa-list me-2"></i>View All Children
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

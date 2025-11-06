@@ -50,7 +50,7 @@ def activity_list(request):
     context = {
         'activities': activities_page,
     }
-    return render(request, 'learnlytics/activity_list.html', context)
+    return render(request, 'learnlytics/activity/list.html', context)
 
 @login_required
 def activity_detail(request, activity_id):
@@ -64,7 +64,7 @@ def activity_detail(request, activity_id):
         'activity': activity,
         'assignments': assignments,
     }
-    return render(request, 'learnlytics/activity_detail.html', context)
+    return render(request, 'learnlytics/activity/detail.html', context)
 
 @login_required
 def activity_new(request):
@@ -100,7 +100,7 @@ def activity_new(request):
             )
             return redirect('learnlytics:activity_detail', activity.id)
     
-    return render(request, 'learnlytics/activity_form.html')
+    return render(request, 'learnlytics/activity/form.html')
 
 @login_required
 def dashboard(request):
@@ -175,7 +175,7 @@ def assign_activity(request, activity_id=None):
         'children': children,
         'selected_activity_id': activity_id,
     }
-    return render(request, 'learnlytics/assign_activity.html', context)
+    return render(request, 'learnlytics/activity/assign.html', context)
 
 @login_required
 def start_activity(request, assignment_id):
@@ -218,7 +218,7 @@ def badges(request):
         'badges': badges,
         'user_badges': user_badges,
     }
-    return render(request, 'learnlytics/badges.html', context)
+    return render(request, 'learnlytics/badges/list.html', context)
 
 @login_required
 def reports(request):

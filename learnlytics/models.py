@@ -62,7 +62,7 @@ class ActivityAssignment(models.Model):
     activity = models.ForeignKey(Activity, on_delete=models.CASCADE, related_name='assignments')
     assigned_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='activity_assignments')
     assigned_date = models.DateTimeField(auto_now_add=True)
-    due_date = models.DateTimeField(null=True, blank=True)
+    due_date = models.DateTimeField(null=True, blank=True, default=None)
     
     # Assignment status
     STATUS_CHOICES = [
@@ -75,8 +75,8 @@ class ActivityAssignment(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='assigned')
     
     # Completion tracking
-    started_at = models.DateTimeField(null=True, blank=True)
-    completed_at = models.DateTimeField(null=True, blank=True)
+    started_at = models.DateTimeField(null=True, blank=True, default=None)
+    completed_at = models.DateTimeField(null=True, blank=True, default=None)
     completion_notes = models.TextField(blank=True)
     progress_percentage = models.IntegerField(default=0, validators=[MinValueValidator(0), MaxValueValidator(100)])
     notes = models.TextField(blank=True)
@@ -127,8 +127,8 @@ class ChildBadge(models.Model):
     child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, related_name='earned_badges')
     badge = models.ForeignKey(Badge, on_delete=models.CASCADE, related_name='child_badges')
     earned_date = models.DateTimeField(auto_now_add=True)
-    awarded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='awarded_badges', null=True, blank=True)
-    earned_for_activity = models.ForeignKey(ActivityAssignment, on_delete=models.SET_NULL, null=True, blank=True)
+    awarded_by = models.ForeignKey(User, on_delete=models.CASCADE, related_name='awarded_badges', null=True, blank=True, default=None)
+    earned_for_activity = models.ForeignKey(ActivityAssignment, on_delete=models.SET_NULL, null=True, blank=True, default=None)
     notes = models.TextField(blank=True)
     
     class Meta:
@@ -152,7 +152,7 @@ class PerformanceMetric(models.Model):
     ]
     
     child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, related_name='performance_metrics')
-    activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True)
+    activity = models.ForeignKey(Activity, on_delete=models.SET_NULL, null=True, blank=True, default=None)
     score = models.FloatField(help_text="Performance score", default=0.0)
     time_spent = models.IntegerField(help_text="Time spent in minutes", default=0)
     attempts = models.IntegerField(help_text="Number of attempts", default=1)
@@ -188,23 +188,23 @@ class Report(models.Model):
     generated_at = models.DateTimeField(auto_now_add=True)
     
     # Report scope
-    child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, null=True, blank=True, related_name='reports')
+    child = models.ForeignKey('earlycare.Child', on_delete=models.CASCADE, null=True, blank=True, related_name='reports', default=None)
     start_date = models.DateField(help_text="Start date for report data")
     end_date = models.DateField(help_text="End date for report data")
     
     # Report content
     summary = models.TextField(help_text="Executive summary", default="Report summary will be provided here.")
-    data = models.JSONField(null=True, blank=True, help_text="Report data in JSON format")
+    data = models.JSONField(null=True, blank=True, default=None, help_text="Report data in JSON format")
     key_findings = models.TextField(help_text="Key findings and insights", default="Key findings will be documented here.")
     recommendations = models.TextField(help_text="Recommendations based on data", default="Recommendations will be provided here.")
     
     # Data visualization
-    chart_data = models.JSONField(null=True, blank=True, help_text="Chart configuration and data")
+    chart_data = models.JSONField(null=True, blank=True, default=None, help_text="Chart configuration and data")
     
     # Export options
     is_exported = models.BooleanField(default=False)
     export_format = models.CharField(max_length=10, choices=[('pdf', 'PDF'), ('excel', 'Excel'), ('csv', 'CSV')], blank=True)
-    export_file = models.FileField(upload_to='reports/', blank=True, null=True)
+    export_file = models.FileField(upload_to='reports/', blank=True, null=True, default=None)
     
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

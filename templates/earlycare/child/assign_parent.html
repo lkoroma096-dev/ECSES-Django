@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Parent - ECSES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-user-friends me-2"></i>Assign Parent</h5>
+      </div>
+      <div class="card-body">
+        <p class="mb-3"><strong>Child:</strong> {{ child.first_name }} {{ child.last_name }}</p>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="id_parent">Parent</label>
+            <select id="id_parent" name="parent_id" class="form-select" required>
+              {% for p in parents %}
+              <option value="{{ p.id }}" {% if child.parent and child.parent.id == p.id %}selected{% endif %}>{{ p.get_full_name|default:p.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <a class="btn btn-secondary" href="{% url 'earlycare:child_detail' child.id %}">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+

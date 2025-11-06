@@ -16,7 +16,7 @@ class Child(models.Model):
     date_of_birth = models.DateField()
     gender = models.CharField(max_length=1, choices=GENDER_CHOICES)
     parent = models.ForeignKey(User, on_delete=models.CASCADE, related_name='children')
-    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_children')
+    teacher = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True, related_name='assigned_children', default=None)
     
     # Additional information
     medical_conditions = models.TextField(blank=True, help_text="Any medical conditions or special needs")
@@ -37,6 +37,11 @@ class Child(models.Model):
         return f"{self.first_name} {self.last_name}"
     
     @property
+    def full_name(self):
+        """Return full name of the child"""
+        return f"{self.first_name} {self.last_name}"
+    
+    @property
     def age_in_months(self):
         from datetime import date
         today = date.today()
@@ -52,41 +57,51 @@ class Assessment(models.Model):
         ('adaptive', 'Adaptive Behavior'),
         ('comprehensive', 'Comprehensive Assessment'),
     ]
+    STATUS_CHOICES = [
+        ('draft', 'Draft'),
+        ('assigned', 'Assigned'),
+        ('in_progress', 'In Progress'),
+        ('completed', 'Completed'),
+        ('archived', 'Archived'),
+    ]
     
     child = models.ForeignKey(Child, on_delete=models.CASCADE, related_name='assessments')
     assessor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='conducted_assessments')
     assessment_type = models.CharField(max_length=20, choices=ASSESSMENT_TYPES)
     assessment_date = models.DateField()
+    due_date = models.DateField(null=True, blank=True, default=None)
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='assigned')
+    is_archived = models.BooleanField(default=False)
     
     # Assessment scores (1-5 scale)
     motor_score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True,
+        null=True, blank=True, default=None,
         help_text="Motor skills score (1-5)"
     )
     cognitive_score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True,
+        null=True, blank=True, default=None,
         help_text="Cognitive development score (1-5)"
     )
     language_score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True,
+        null=True, blank=True, default=None,
         help_text="Language development score (1-5)"
     )
     social_score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True,
+        null=True, blank=True, default=None,
         help_text="Social-emotional score (1-5)"
     )
     adaptive_score = models.IntegerField(
         validators=[MinValueValidator(1), MaxValueValidator(5)],
-        null=True, blank=True,
+        null=True, blank=True, default=None,
         help_text="Adaptive behavior score (1-5)"
     )
     
     # Overall assessment
-    overall_score = models.FloatField(null=True, blank=True)
+    overall_score = models.FloatField(null=True, blank=True, default=None)
     notes = models.TextField(blank=True)
     recommendations = models.TextField(blank=True)
     
@@ -130,8 +145,8 @@ class SupportPlan(models.Model):
     timeline = models.CharField(max_length=200, blank=True, help_text="Expected timeline")
     
     # Review information
-    review_date = models.DateField(null=True, blank=True)
-    next_review = models.DateField(null=True, blank=True)
+    review_date = models.DateField(null=True, blank=True, default=None)
+    next_review = models.DateField(null=True, blank=True, default=None)
     progress_notes = models.TextField(blank=True)
     
     created_at = models.DateTimeField(auto_now_add=True)

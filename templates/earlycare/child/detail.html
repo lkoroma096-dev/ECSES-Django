@@ -11,9 +11,21 @@
                 <i class="fas fa-child me-2"></i>{{ child.first_name }} {{ child.last_name }}
             </h1>
             <div>
+                {% if can_create_support_plan %}
                 <a href="{% url 'earlycare:support_plan' child.id %}" class="btn btn-info me-2">
                     <i class="fas fa-clipboard-list me-1"></i>Support Plan
                 </a>
+                {% endif %}
+                {% if can_edit %}
+                <a href="{% url 'earlycare:child_edit' child.id %}" class="btn btn-warning me-2">
+                    <i class="fas fa-edit me-1"></i>Edit
+                </a>
+                {% endif %}
+                {% if can_delete %}
+                <a href="{% url 'earlycare:child_delete' child.id %}" class="btn btn-danger me-2">
+                    <i class="fas fa-trash me-1"></i>Delete
+                </a>
+                {% endif %}
                 <a href="{% url 'earlycare:child_list' %}" class="btn btn-secondary">
                     <i class="fas fa-arrow-left me-1"></i>Back to List
                 </a>
@@ -102,10 +114,15 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-clipboard-check me-2"></i>Recent Assessments
                 </h5>
+                {% if can_create_assessment %}
+                <a href="{% url 'earlycare:assessment_new' %}?child={{ child.id }}" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-1"></i>New Assessment
+                </a>
+                {% endif %}
             </div>
             <div class="card-body">
                 <div class="table-responsive">
@@ -133,9 +150,9 @@
                                 <td>{{ assessment.social_score|default:"-" }}</td>
                                 <td>{{ assessment.adaptive_score|default:"-" }}</td>
                                 <td>
-                                    <button class="btn btn-sm btn-outline-primary" data-bs-toggle="modal" data-bs-target="#assessmentModal{{ assessment.id }}">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
+                                    <a href="{% url 'earlycare:assessment_detail' assessment.id %}" class="btn btn-sm btn-outline-primary me-1">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
                                 </td>
                             </tr>
                             {% endfor %}
@@ -153,21 +170,31 @@
 <div class="row mb-4">
     <div class="col-12">
         <div class="card">
-            <div class="card-header">
+            <div class="card-header d-flex justify-content-between align-items-center">
                 <h5 class="card-title mb-0">
                     <i class="fas fa-file-alt me-2"></i>Recent Progress Reports
                 </h5>
+                {% if can_create_progress_report %}
+                <a href="#" class="btn btn-sm btn-success">
+                    <i class="fas fa-plus me-1"></i>New Report
+                </a>
+                {% endif %}
             </div>
             <div class="card-body">
                 <div class="list-group list-group-flush">
                     {% for report in recent_reports %}
-                    <div class="list-group-item">
-                        <div class="d-flex w-100 justify-content-between">
-                            <h6 class="mb-1">{{ report.title }}</h6>
-                            <small class="text-muted">{{ report.report_date|date:"M d, Y" }}</small>
+                    <div class="list-group-item d-flex justify-content-between align-items-start">
+                        <div class="ms-2 me-auto">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ report.title }}</h6>
+                                <small class="text-muted">{{ report.report_date|date:"M d, Y" }}</small>
+                            </div>
+                            <p class="mb-1">{{ report.summary|truncatechars:150 }}</p>
+                            <small class="text-muted">Created by: {{ report.created_by.get_full_name|default:report.created_by.username }}</small>
                         </div>
-                        <p class="mb-1">{{ report.summary|truncatechars:150 }}</p>
-                        <small class="text-muted">Created by: {{ report.created_by.get_full_name|default:report.created_by.username }}</small>
+                        <a href="{% url 'earlycare:progress_report_detail' report.id %}" class="btn btn-sm btn-outline-primary ms-2">
+                            <i class="fas fa-eye"></i> View
+                        </a>
                     </div>
                     {% endfor %}
                 </div>

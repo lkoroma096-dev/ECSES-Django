@@ -1,0 +1,124 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}Assessments - ECSES{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12 d-flex justify-content-between align-items-center mb-4">
+        <h1><i class="fas fa-clipboard-check me-2"></i>Assessments</h1>
+        {% if user.is_superuser or (user.userprofile and user.userprofile.role in 'teacher admin') %}
+        <a href="{% url 'earlycare:assessment_new' %}" class="btn btn-primary">
+            <i class="fas fa-plus me-2"></i>New Assessment
+        </a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body">
+                <form method="get" class="row g-3">
+                    <div class="col-md-6">
+                        <input type="text" class="form-control" name="search" placeholder="Search by child or type..." value="{{ request.GET.search }}">
+                    </div>
+                    <div class="col-md-4">
+                        <select class="form-select" name="assessment_type">
+                            <option value="">All Types</option>
+                            <option value="motor" {% if request.GET.assessment_type == 'motor' %}selected{% endif %}>Motor</option>
+                            <option value="cognitive" {% if request.GET.assessment_type == 'cognitive' %}selected{% endif %}>Cognitive</option>
+                            <option value="language" {% if request.GET.assessment_type == 'language' %}selected{% endif %}>Language</option>
+                            <option value="social" {% if request.GET.assessment_type == 'social' %}selected{% endif %}>Social-Emotional</option>
+                            <option value="adaptive" {% if request.GET.assessment_type == 'adaptive' %}selected{% endif %}>Adaptive</option>
+                            <option value="comprehensive" {% if request.GET.assessment_type == 'comprehensive' %}selected{% endif %}>Comprehensive</option>
+                        </select>
+                    </div>
+                    <div class="col-md-3">
+                        <select class="form-select" name="status">
+                            <option value="">All Status</option>
+                            <option value="draft" {% if request.GET.status == 'draft' %}selected{% endif %}>Draft</option>
+                            <option value="assigned" {% if request.GET.status == 'assigned' %}selected{% endif %}>Assigned</option>
+                            <option value="in_progress" {% if request.GET.status == 'in_progress' %}selected{% endif %}>In Progress</option>
+                            <option value="completed" {% if request.GET.status == 'completed' %}selected{% endif %}>Completed</option>
+                            <option value="archived" {% if request.GET.status == 'archived' %}selected{% endif %}>Archived</option>
+                        </select>
+                    </div>
+                    <div class="col-md-2">
+                        <button type="submit" class="btn btn-outline-primary w-100">
+                            <i class="fas fa-search me-1"></i>Filter
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    {% for a in assessments %}
+    <div class="col-md-6 col-lg-4 mb-4">
+        <div class="card h-100">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h6 class="mb-0">{{ a.child.first_name }} {{ a.child.last_name }}</h6>
+                <div class="d-flex gap-2 align-items-center">
+                    <span class="badge bg-secondary">{{ a.get_assessment_type_display }}</span>
+                    <span class="badge bg-{% if a.status == 'completed' %}success{% elif a.status == 'in_progress' %}info{% elif a.status == 'assigned' %}primary{% elif a.status == 'draft' %}secondary{% else %}dark{% endif %}">{{ a.status|title|replace:"_"," " }}</span>
+                </div>
+            </div>
+            <div class="card-body">
+                <p class="mb-1"><strong>Date:</strong> {{ a.assessment_date }}</p>
+                {% if a.overall_score %}
+                <div class="mb-2">
+                    <div class="progress" style="height: 8px;">
+                        <div class="progress-bar bg-success" style="width: {% widthratio a.overall_score 5 100 %}%"></div>
+                    </div>
+                    <small class="text-muted">Overall: {{ a.overall_score|floatformat:1 }}/5.0</small>
+                </div>
+                {% endif %}
+            </div>
+            <div class="card-footer d-flex gap-2">
+                <a href="{% url 'earlycare:assessment_detail' a.id %}" class="btn btn-sm btn-primary"><i class="fas fa-eye me-1"></i>View</a>
+                {% if user.is_superuser or (user.userprofile and user.userprofile.role in 'teacher admin') %}
+                <a href="{% url 'earlycare:assessment_edit' a.id %}" class="btn btn-sm btn-outline-secondary"><i class="fas fa-edit me-1"></i>Edit</a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    {% empty %}
+    <div class="col-12">
+        <div class="text-center text-muted py-5">
+            <i class="fas fa-clipboard-check fa-3x mb-3"></i>
+            <h4>No assessments found</h4>
+            <p>{% if request.GET.search or request.GET.assessment_type %}Try adjusting your filters.{% else %}Create the first assessment to get started.{% endif %}</p>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+
+{% if assessments.has_other_pages %}
+<div class="row">
+    <div class="col-12">
+        <nav aria-label="Assessments pagination">
+            <ul class="pagination justify-content-center">
+                {% if assessments.has_previous %}
+                <li class="page-item"><a class="page-link" href="?page={{ assessments.previous_page_number }}">Previous</a></li>
+                {% endif %}
+                {% for num in assessments.paginator.page_range %}
+                    {% if assessments.number == num %}
+                    <li class="page-item active"><span class="page-link">{{ num }}</span></li>
+                    {% elif num > assessments.number|add:'-3' and num < assessments.number|add:'3' %}
+                    <li class="page-item"><a class="page-link" href="?page={{ num }}">{{ num }}</a></li>
+                    {% endif %}
+                {% endfor %}
+                {% if assessments.has_next %}
+                <li class="page-item"><a class="page-link" href="?page={{ assessments.next_page_number }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </nav>
+    </div>
+    </div>
+{% endif %}
+{% endblock %}
+
+

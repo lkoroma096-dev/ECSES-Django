@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+
+{% block title %}Assign Teacher - ECSES{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+  <div class="col-md-8 col-lg-6">
+    <div class="card">
+      <div class="card-header">
+        <h5 class="mb-0"><i class="fas fa-user-tag me-2"></i>Assign Teacher</h5>
+      </div>
+      <div class="card-body">
+        <p class="mb-3"><strong>Child:</strong> {{ child.first_name }} {{ child.last_name }}</p>
+        <form method="post">
+          {% csrf_token %}
+          <div class="mb-3">
+            <label class="form-label" for="id_teacher">Teacher</label>
+            <select id="id_teacher" name="teacher_id" class="form-select" required>
+              {% for t in teachers %}
+              <option value="{{ t.id }}" {% if child.teacher and child.teacher.id == t.id %}selected{% endif %}>{{ t.get_full_name|default:t.username }}</option>
+              {% endfor %}
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <a class="btn btn-secondary" href="{% url 'earlycare:child_detail' child.id %}">Cancel</a>
+            <button type="submit" class="btn btn-primary">Save</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+
