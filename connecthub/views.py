@@ -1,13 +1,33 @@
+import json
+
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth import login, logout, authenticate
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.models import User
 from django.contrib import messages
 from django.db.models import Q, Count
+from django.db.models.functions import TruncMonth
 from django.http import JsonResponse
 from django.core.paginator import Paginator
 from .models import UserProfile, Message, Notification
 # NOTE: Import app models lazily inside views to avoid ImportError when optional apps are absent
+
+ROLE_LABELS = {
+    'admin': 'Administrators',
+    'teacher': 'Teachers',
+    'parent': 'Parents',
+    'child': 'Children',
+}
+
+
+def _get_role_totals():
+    """Return a dict of user counts keyed by role slug."""
+    role_totals = {role: 0 for role, _ in UserProfile.ROLE_CHOICES}
+    for entry in UserProfile.objects.values('role').annotate(count=Count('id')):
+        role = entry['role']
+        if role in role_totals:
+            role_totals[role] = entry['count']
+    return role_totals
 
 def home(request):
     """Home page with role-based redirect"""
@@ -174,10 +194,22 @@ def admin_dashboard(request):
     except ImportError:
         Activity = None
     
+    # Aggregate user counts by role so totals match individual buckets
+    role_totals = _get_role_totals()
+    teacher_count = role_totals.get('teacher', 0)
+    parent_count = role_totals.get('parent', 0)
+    child_user_count = role_totals.get('child', 0)
+    admin_count = role_totals.get('admin', 0)
+
     # Get dashboard statistics
-    total_users = User.objects.count()
     total_children = Child.objects.count() if Child else 0
-    total_teachers = UserProfile.objects.filter(role='teacher').count()
+    # Treat "Children" metric as EarlyCare children records and include them in overall total
+    non_child_users = sum(
+        count for role, count in role_totals.items() if role != 'child'
+    )
+    total_users = non_child_users + total_children
+    child_count = total_children
+    total_teachers = teacher_count
     total_activities = Activity.objects.count() if Activity else 0
     # Unassigned children
     unassigned_children = 0
@@ -187,20 +219,28 @@ def admin_dashboard(request):
         except Exception:
             unassigned_children = 0
     
-    # User counts by role
-    teacher_count = UserProfile.objects.filter(role='teacher').count()
-    parent_count = UserProfile.objects.filter(role='parent').count()
-    child_count = UserProfile.objects.filter(role='child').count()
-    
     # Recent messages
     recent_messages = Message.objects.order_by('-created_at')[:5]
     
     # Recent notifications
     recent_notifications = Notification.objects.order_by('-created_at')[:5]
     
-    # Chart data (placeholder)
-    chart_labels = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun']
-    chart_data = [12, 19, 3, 5, 2, 3]
+    # LearnLytics chart data should mirror actual activity creation/completion trends
+    chart_labels = []
+    chart_data = []
+    if Activity and Activity.objects.exists():
+        activity_trend = (
+            Activity.objects
+            .annotate(month=TruncMonth('created_at'))
+            .values('month')
+            .order_by('month')
+            .annotate(count=Count('id'))
+        )
+        for entry in activity_trend:
+            month = entry.get('month')
+            if month:
+                chart_labels.append(month.strftime('%b %Y'))
+                chart_data.append(entry['count'])
     
     context = {
         'total_users': total_users,
@@ -210,12 +250,14 @@ def admin_dashboard(request):
         'teacher_count': teacher_count,
         'parent_count': parent_count,
         'child_count': child_count,
+        'admin_count': admin_count,
         'active_assessments': 0,  # Placeholder
         'active_support_plans': 0,  # Placeholder
         'recent_messages': recent_messages,
         'recent_notifications': recent_notifications,
-        'chart_labels': chart_labels,
-        'chart_data': chart_data,
+        'chart_has_data': bool(chart_labels),
+        'chart_labels_json': json.dumps(chart_labels),
+        'chart_data_json': json.dumps(chart_data),
         'unassigned_children': unassigned_children,
     }
     return render(request, 'dashboards/admin_dashboard.html', context)
@@ -577,6 +619,13 @@ def user_management(request):
     if not (request.user.is_superuser or (hasattr(request.user, 'userprofile') and request.user.userprofile.role == 'admin')):
         messages.error(request, 'Access denied. Admin privileges required.')
         return redirect('home')
+
+    # Try to import Child model for EarlyCare children statistics
+    try:
+        from earlycare.models import Child
+        ChildModel = Child
+    except ImportError:
+        ChildModel = None
     
     # Get search parameters
     search_query = request.GET.get('search', '')
@@ -602,8 +651,21 @@ def user_management(request):
     page_number = request.GET.get('page')
     users_page = paginator.get_page(page_number)
     
-    # Get role counts for statistics
-    role_counts = UserProfile.objects.values('role').annotate(count=Count('role'))
+    # Get role counts for statistics (include empty roles for consistent display)
+    total_children = ChildModel.objects.count() if ChildModel else 0
+    role_totals = _get_role_totals()
+    non_child_users = sum(
+        count for role, count in role_totals.items() if role != 'child'
+    )
+    role_counts = [
+        {
+            'role': role_value,
+            'label': ROLE_LABELS.get(role_value, role_display),
+            'count': total_children if role_value == 'child' else role_totals.get(role_value, 0),
+        }
+        for role_value, role_display in UserProfile.ROLE_CHOICES
+    ]
+    total_users = non_child_users + total_children
     
     context = {
         'users': users_page,
@@ -611,6 +673,8 @@ def user_management(request):
         'role_filter': role_filter,
         'role_counts': role_counts,
         'role_choices': UserProfile.ROLE_CHOICES,
+        'total_users': total_users,
+        'total_children': total_children,
     }
     return render(request, 'connecthub/users/list.html', context)
 

@@ -180,7 +180,14 @@
                 </h5>
             </div>
             <div class="card-body">
+                {% if chart_has_data %}
                 <canvas id="performanceChart" width="400" height="200"></canvas>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="fas fa-chart-line fa-3x mb-3"></i>
+                    <p class="mb-0">No LearnLytics activity data yet. Create your first activity to see trends here.</p>
+                </div>
+                {% endif %}
             </div>
         </div>
     </div>
@@ -275,30 +282,37 @@
 {% endblock %}
 
 {% block extra_js %}
+{% if chart_has_data %}
 <script>
 // Performance Chart
 const ctx = document.getElementById('performanceChart').getContext('2d');
 const performanceChart = new Chart(ctx, {
     type: 'line',
     data: {
-        labels: {{ chart_labels|safe }},
+        labels: {{ chart_labels_json|safe }},
         datasets: [{
-            label: 'Activity Completions',
-            data: {{ chart_data|safe }},
+            label: 'Activities Created',
+            data: {{ chart_data_json|safe }},
             borderColor: 'rgb(75, 192, 192)',
             backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            tension: 0.1
+            tension: 0.1,
+            fill: true,
+            pointBackgroundColor: 'rgb(75, 192, 192)'
         }]
     },
     options: {
         responsive: true,
         scales: {
             y: {
-                beginAtZero: true
+                beginAtZero: true,
+                ticks: {
+                    precision: 0
+                }
             }
         }
     }
 });
 </script>
+{% endif %}
 {% endblock %}
 
